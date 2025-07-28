@@ -1,0 +1,9 @@
+cramdir: 
+sample_map: 
+ref_genome: /cluster/projects/nn10082k/ref/house_sparrow_genome_assembly-18-11-14_masked.fa
+ref_ploidy: 
+genome_region: mtDNA
+filt_indelgap: 5
+filt_inclusions: 'QUAL>20 & FMT/DP>5 & FMT/DP<75'
+mafft_iterations: 1000
+iqtree_bootstraps: 1000

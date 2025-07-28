@@ -3,7 +3,6 @@ include { PLINK_EXTRACT_SITES as PLINK_EXTRACT_PRUNED; PLINK_EXTRACT_SITES as PL
 include { PLINK_FILTER; PLINK_FILTER as PLINK_REFILTER } from "../modules/plink.nf"
 include { ADMIXTURE; ADMIXTURE_AIMS } from "../modules/admixture.nf"
 
-// Output syntax current as of version 25.04.6
 nextflow.preview.output = true
 
 workflow {
