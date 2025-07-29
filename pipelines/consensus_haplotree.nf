@@ -35,8 +35,8 @@ workflow {
 }
 
 output {
-    fasta { path "haplotype_phylogeny/fasta" }
-    iqtree { path "haplotype_phylogeny/iqtree" }
-    alignment { path "haplotype_phylogeny/hapsolutely" }
-    plain_newick { path "haplotype_phylogeny/hapsolutely" }
+    fasta { path "consensus_haplotree/fasta" }
+    iqtree { path "consensus_haplotree/iqtree" }
+    alignment { path "consensus_haplotree/hapsolutely" }
+    plain_newick { path "consensus_haplotree/hapsolutely" }
 }

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ADMIN
-#SBATCH --job-name=haplotype_phylogeny
+#SBATCH --job-name=consensus_haplotree
 #SBATCH --output=SLURM-%j-%x.out
 #SBATCH --error=SLURM-%j-%x.err
 #SBATCH --account=nn10082k
@@ -29,8 +29,8 @@ set -o nounset
 cd ${repodir}
 
 nextflow -log .nextflow/nextflow.log \
-    run ./pipelines/haplotype_phylogeny.nf \
-    -params-file pipelines/haplotype_phylogeny.param.yaml \
+    run ./pipelines/consensus_haplotree.nf \
+    -params-file pipelines/consensus_haplotree.param.yaml \
     -profile saga
 
 # End work
