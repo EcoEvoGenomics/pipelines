@@ -1,0 +1,64 @@
+process GET_GENOMICS_GENERAL {
+
+    // Obtains Simon Martin's genomics_general repository
+    // See https://simonmartinlab.org/software/
+
+    label "SYSTEM"
+
+    output:
+    path("genomics_general-0.5/*")
+
+    script:
+    """
+    curl -L https://github.com/simonhmartin/genomics_general/archive/refs/tags/v0.5.tar.gz > genomics_general.tar.gz
+    tar -zxvf genomics_general.tar.gz
+    sed -i -e 's/np.NaN/np.nan/g' genomics_general-0.5/genomics.py
+    """
+}
+
+process GENOMICS_GENERAL_VCF_TO_GENO {
+
+    label "NUMPY"
+
+    input:
+    path(genomics_general)
+    path(vcf)
+
+    output:
+    path("${vcf.simpleName}.geno.gz")
+
+    script:
+    """
+    python VCF_processing/parseVCF.py -i ${vcf} -o ${vcf.simpleName}.geno.gz
+    """
+}
+
+process GENOMICS_GENERAL_POPGEN_WINDOWS {
+
+    label "NUMPY"
+
+    input:
+    path(genomics_general)
+    path(geno)
+    path(popfile)
+    val(window)
+    val(min_sites)
+    val(format)
+
+    output:
+    path("${geno.simpleName}.csv.gz")
+
+    script:
+    """
+    echo '-w ${window}' >> popgenWindows.args
+    echo '-m ${min_sites}' >> popgenWindows.args
+    echo '-g ${geno}' >> popgenWindows.args
+    echo '-o ${geno.simpleName}.csv.gz' >> popgenWindows.args
+    echo '-f ${format}' >> popgenWindows.args
+    echo '-T ${task.cpus}' >> popgenWindows.args
+    echo '--popsFile ${popfile}' >> popgenWindows.args
+    cat ${popfile} | awk '{print \$2}' | sed 's/^/-p /' | uniq >> popgenWindows.args
+
+    cat popgenWindows.args | xargs python popgenWindows.py
+    """
+}
