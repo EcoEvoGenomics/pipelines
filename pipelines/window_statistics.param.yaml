@@ -1,0 +1,13 @@
+vcf: 
+n_chroms: 30
+scaffold_name: scaffold
+
+ld_decay_bin_size: 1000
+ld_window_kb: 1000
+ld_window: 100
+thin: 0.9
+
+sliding_window: 100000
+min_sites: 10
+format: phased
+popfile: 
