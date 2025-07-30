@@ -1,0 +1,39 @@
+################ Input ################
+vcf: 
+cramdir: 
+popfile: 
+sample_map: 
+############## Reference ##############
+ref_genome: /cluster/projects/nn10082k/ref/house_sparrow_genome_assembly-18-11-14_masked.fa
+ref_ploidy: 
+n_chroms: 30
+scaffold_name: scaffold
+################# --- #################
+
+# population_structure
+exclude_chroms: mtDNA
+filter_mind: 0.2
+filter_geno: 0.2
+filter_maf: 0.01
+prune_window: 50
+prune_step: 10
+prune_threshold: 0.1
+admixture_kmin: 1
+admixture_kmax: 6
+aim_variance_threshold: 0.05
+
+# consensus_haplotree
+genome_region: mtDNA
+filt_indelgap: 5
+filt_inclusions: 'QUAL>20 & FMT/DP>5 & FMT/DP<75'
+mafft_iterations: 1000
+iqtree_bootstraps: 1000
+
+# window_statistics
+ld_thin: 0.9
+ld_bin_size: 1000
+ld_window: 100
+ld_window_kb: 1000
+gg_sliding_window: 100000
+gg_min_sites: 10
+gg_format: phased
