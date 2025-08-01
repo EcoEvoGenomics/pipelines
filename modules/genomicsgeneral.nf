@@ -40,7 +40,7 @@ process GENOMICS_GENERAL_POPGEN_WINDOWS {
     input:
     path(genomics_general)
     path(geno)
-    path(popfile)
+    path(metadata)
     val(window)
     val(min_sites)
     val(format)
@@ -50,14 +50,16 @@ process GENOMICS_GENERAL_POPGEN_WINDOWS {
 
     script:
     """
+    cat ${metadata} | awk -F, '{print \$1 " " \$2}' > sample.pops
+
     echo '-w ${window}' >> popgenWindows.args
     echo '-m ${min_sites}' >> popgenWindows.args
     echo '-g ${geno}' >> popgenWindows.args
     echo '-o ${geno.simpleName}.csv.gz' >> popgenWindows.args
     echo '-f ${format}' >> popgenWindows.args
     echo '-T ${task.cpus}' >> popgenWindows.args
-    echo '--popsFile ${popfile}' >> popgenWindows.args
-    cat ${popfile} | awk '{print \$2}' | sed 's/^/-p /' | uniq >> popgenWindows.args
+    echo '--popsFile sample.pops' >> popgenWindows.args
+    cat sample.pops | awk '{print \$2}' | sed 's/^/-p /' | uniq >> popgenWindows.args
 
     cat popgenWindows.args | xargs python popgenWindows.py
     """

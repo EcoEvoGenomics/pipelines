@@ -4,7 +4,7 @@ process BCFTOOLS_CALL_REGION_VARIANTS {
 
     input:
     path(cram)
-    path(sample_map)
+    path(metadata)
     path(ref_genome)
     path(ref_ploidy)
     val(region)
@@ -27,7 +27,7 @@ process BCFTOOLS_CALL_REGION_VARIANTS {
     while read -r sample; do
         echo "^\$sample" >> samples_greps.txt
     done < "samples.txt"
-    grep -f samples_greps.txt ${sample_map} > call.samples
+    grep -f samples_greps.txt ${metadata} | awk -F, '{print \$1, \$3}' > call.samples
 
     bcftools call \
         --threads ${task.cpus} \

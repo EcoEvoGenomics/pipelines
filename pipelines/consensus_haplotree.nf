@@ -11,7 +11,7 @@ nextflow.preview.output = true
 workflow {
     main:
     crams = Channel.fromPath("${params.cramdir}/**.cram")
-    BCFTOOLS_CALL_REGION_VARIANTS(crams, params.sample_map, params.ref_genome, params.ref_ploidy, params.genome_region)
+    BCFTOOLS_CALL_REGION_VARIANTS(crams, params.metadata, params.ref_genome, params.ref_ploidy, params.genome_region)
     BCFTOOLS_INDEX(BCFTOOLS_CALL_REGION_VARIANTS.out.vcf)
     BCFTOOLS_NORMALISE(BCFTOOLS_INDEX.out.indexed_vcf, params.ref_genome)
     BCFTOOLS_INDEX_NORMALISED(BCFTOOLS_NORMALISE.out.normalised_vcf)
