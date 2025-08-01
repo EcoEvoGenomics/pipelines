@@ -5,6 +5,7 @@ include { SAMTOOLS_EXTRACT_REGION; SAMTOOLS_INDEX_FASTA } from "../modules/samto
 include { CONCATENATE_FILES as CONCATENATE_FASTAS } from "../modules/system.nf"
 include { MAFFT_ALIGN } from "../modules/mafft.nf"
 include { IQTREE_BUILD_TREE; IQTREE_TO_PLAIN_NEWICK } from "../modules/iqtree.nf"
+include { METADATA_TO_SPART } from "../modules/system.nf"
 
 nextflow.preview.output = true
 
@@ -27,11 +28,14 @@ workflow {
     IQTREE_BUILD_TREE(MAFFT_ALIGN.out.aligned, params.iqtree_bootstraps)
     IQTREE_TO_PLAIN_NEWICK(IQTREE_BUILD_TREE.out.contree)
 
+    METADATA_TO_SPART(params.metadata)
+
     publish:
     fasta = SAMTOOLS_EXTRACT_REGION.out
     iqtree = IQTREE_BUILD_TREE.out.all_treefiles
     alignment = MAFFT_ALIGN.out.aligned
     plain_newick = IQTREE_TO_PLAIN_NEWICK.out
+    spart = METADATA_TO_SPART.out
 }
 
 output {
@@ -39,4 +43,5 @@ output {
     iqtree { path "consensus_haplotree/iqtree" }
     alignment { path "consensus_haplotree/hapsolutely" }
     plain_newick { path "consensus_haplotree/hapsolutely" }
+    spart { path "consensus_haplotree/hapsolutely" }
 }

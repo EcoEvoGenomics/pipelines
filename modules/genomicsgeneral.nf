@@ -44,13 +44,14 @@ process GENOMICS_GENERAL_POPGEN_WINDOWS {
     val(window)
     val(min_sites)
     val(format)
+    val(compare_species)
 
     output:
     path("${geno.simpleName}.csv.gz")
 
     script:
     """
-    cat ${metadata} | awk -F, '{print \$1 " " \$2}' > sample.pops
+    cat ${metadata} | awk -F, '{print \$1 " " \$${compare_species ? 2 : 3}}' > sample.pops
 
     echo '-w ${window}' >> popgenWindows.args
     echo '-m ${min_sites}' >> popgenWindows.args

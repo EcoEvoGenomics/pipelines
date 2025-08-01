@@ -13,7 +13,7 @@ workflow {
 
     GG = GET_GENOMICS_GENERAL()
     geno = GENOMICS_GENERAL_VCF_TO_GENO(GG, vcf)
-    GENOMICS_GENERAL_POPGEN_WINDOWS(GG, geno, params.metadata, params.gg_sliding_window, params.gg_min_sites, params.gg_format)
+    GENOMICS_GENERAL_POPGEN_WINDOWS(GG, geno, params.metadata, params.gg_sliding_window, params.gg_min_sites, params.gg_format, params.gg_compare_species)
 
     publish:
     ld_stats = PLINK_PAIRWISE_LD.out
