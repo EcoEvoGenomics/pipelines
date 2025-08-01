@@ -37,6 +37,9 @@ process GENOMICS_GENERAL_POPGEN_WINDOWS {
 
     label "NUMPY"
 
+    // The script may fail if a single sample is missing for a (chrom) VCF
+    errorStrategy "ignore"
+
     input:
     path(genomics_general)
     path(geno)
