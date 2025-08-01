@@ -36,3 +36,4 @@ ld_window_kb: 1000
 gg_sliding_window: 100000
 gg_min_sites: 10
 gg_format: phased
+gg_compare_species: true
