@@ -27,7 +27,7 @@ process BCFTOOLS_CALL_REGION_VARIANTS {
     while read -r sample; do
         echo "^\$sample" >> samples_greps.txt
     done < "samples.txt"
-    grep -f samples_greps.txt ${metadata} | awk -F, '{print \$1, \$3}' > call.samples
+    grep -f samples_greps.txt ${metadata} | awk -F, '{print \$1, \$4}' > call.samples
 
     bcftools call \
         --threads ${task.cpus} \

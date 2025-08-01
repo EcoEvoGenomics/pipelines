@@ -1,7 +1,7 @@
 ################ Input ################
 vcf: 
 cramdir: 
-metadata: 
+metadata: ./examples/metadata.csv
 ############## Reference ##############
 ref_genome: /cluster/projects/nn10082k/ref/house_sparrow_genome_assembly-18-11-14_masked.fa
 ref_ploidy: 
