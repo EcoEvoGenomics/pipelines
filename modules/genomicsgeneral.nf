@@ -37,6 +37,9 @@ process GENOMICS_GENERAL_POPGEN_WINDOWS {
 
     label "NUMPY"
 
+    // The script may fail if a single sample is missing for a (chrom) VCF
+    errorStrategy "ignore"
+
     input:
     path(genomics_general)
     path(geno)
@@ -47,7 +50,7 @@ process GENOMICS_GENERAL_POPGEN_WINDOWS {
     val(compare_species)
 
     output:
-    path("${geno.simpleName}.csv.gz")
+    path("${geno.simpleName}.csv")
 
     script:
     """
@@ -56,7 +59,7 @@ process GENOMICS_GENERAL_POPGEN_WINDOWS {
     echo '-w ${window}' >> popgenWindows.args
     echo '-m ${min_sites}' >> popgenWindows.args
     echo '-g ${geno}' >> popgenWindows.args
-    echo '-o ${geno.simpleName}.csv.gz' >> popgenWindows.args
+    echo '-o ${geno.simpleName}.csv' >> popgenWindows.args
     echo '-f ${format}' >> popgenWindows.args
     echo '-T ${task.cpus}' >> popgenWindows.args
     echo '--popsFile sample.pops' >> popgenWindows.args
