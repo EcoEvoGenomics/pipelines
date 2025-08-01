@@ -5,14 +5,14 @@ nextflow.preview.output = true
 
 workflow {
     main:
-    vcf = file("${params.vcf}")
-    PLINK_INIT_BEDFILES(vcf, params.n_chroms)
+    vcfs = Channel.fromPath("${params.vcfdir}/**.vcf.gz")
+    PLINK_INIT_BEDFILES(vcfs, params.n_chroms)
     PLINK_PAIRWISE_LD(PLINK_INIT_BEDFILES.out, params.ld_thin, params.ld_window, params.ld_window_kb)
     PARSE_PLINK_LD_DECAY(PLINK_PAIRWISE_LD.out, params.scaffold_name, params.ld_bin_size)
     PLOT_PLINK_LD_DECAY(PARSE_PLINK_LD_DECAY.out, params.ld_window_kb)
 
     GG = GET_GENOMICS_GENERAL()
-    geno = GENOMICS_GENERAL_VCF_TO_GENO(GG, vcf)
+    geno = GENOMICS_GENERAL_VCF_TO_GENO(GG, vcfs)
     GENOMICS_GENERAL_POPGEN_WINDOWS(GG, geno, params.metadata, params.gg_sliding_window, params.gg_min_sites, params.gg_format, params.gg_compare_species)
 
     publish:

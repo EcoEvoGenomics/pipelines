@@ -1,6 +1,4 @@
 ################ Input ################
-vcf: 
-cramdir: 
 metadata: ./examples/metadata.csv
 ############## Reference ##############
 ref_genome: /cluster/projects/nn10082k/ref/house_sparrow_genome_assembly-18-11-14_masked.fa
@@ -10,6 +8,7 @@ scaffold_name: scaffold
 ################# --- #################
 
 # population_structure
+vcf: 
 exclude_chroms: mtDNA
 filter_mind: 0.2
 filter_geno: 0.2
@@ -22,6 +21,7 @@ admixture_kmax: 6
 aim_variance_threshold: 0.05
 
 # consensus_haplotree
+cramdir: 
 genome_region: mtDNA
 filt_indelgap: 5
 filt_inclusions: 'QUAL>20 & FMT/DP>5 & FMT/DP<75'
@@ -29,6 +29,7 @@ mafft_iterations: 1000
 iqtree_bootstraps: 1000
 
 # window_statistics
+vcfdir:
 ld_thin: 0.9
 ld_bin_size: 1000
 ld_window: 100
