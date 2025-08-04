@@ -15,6 +15,49 @@ process CONCATENATE_FILES {
     """
 }
 
+process JOIN_GROUPED_CSVS {
+
+    label "SYSTEM"
+
+    input:
+    tuple val(groupname), path(csvs, stageAs: "inputs/*")
+    
+    output:
+    path("${groupname}.csv"), emit: joined
+
+    script:
+    """
+    # WRITE HEADER FROM FIRST FILE
+    find inputs/ -type f,l | head -n 1 | xargs head -n 1 >> ${groupname}.csv
+    # WRITE CONTENT OF ALL FILES EXCEPT HEADERS
+    find inputs/ -type f,l | sort -V > inputs.list.tmp
+    while read -r input; do
+        tail -n +2 \$input >> ${groupname}.csv
+    done < inputs.list.tmp
+    """
+}
+
+process WRITE_POPULATION_CENSUS_LIST {
+
+    label "SYSTEM"
+
+    input:
+    val(population)
+    path(metadata)
+    
+    output:
+    path("${population}.list")
+
+    script:
+    """
+    cat ${metadata} | awk -F, '{if (\$3 == "${population}") print \$1}' > "${population}.list"
+    if [[ \$(wc -l < ${population}.list) -eq 0 ]]; then
+        echo "ERROR: The population ${population} has no members."
+        exit 1
+    fi
+    """
+}
+
 process METADATA_TO_SPART {
 
     // For a description of SPART, see Miralles et al. (2021): https://doi.org/10.1111/1755-0998.13470

@@ -5,7 +5,7 @@ nextflow.preview.output = true
 
 workflow {
     main:
-    vcfs = Channel.fromPath("${params.vcfdir}/**.vcf.gz")
+    vcfs = Channel.fromPath("${params.ws_vcfdir}/**.vcf.gz")
     PLINK_INIT_BEDFILES(vcfs, params.n_chroms)
     PLINK_PAIRWISE_LD(PLINK_INIT_BEDFILES.out, params.ld_thin, params.ld_window, params.ld_window_kb)
     PARSE_PLINK_LD_DECAY(PLINK_PAIRWISE_LD.out, params.scaffold_name, params.ld_bin_size)

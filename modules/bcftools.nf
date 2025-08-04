@@ -120,3 +120,23 @@ process BCFTOOLS_MAKE_CONSENSUS_FASTA {
     | bgzip -c > ${vcf.simpleName}.fasta.gz
     """
 }
+
+process BCFTOOLS_PICK_SAMPLES {
+
+    label "BCFTOOLS"
+
+    input:
+    tuple path(sample_list), path(vcf)
+
+    output:
+    path("${sample_list.simpleName}_${vcf.simpleName}.vcf.gz"), emit: samples_vcf
+
+    script:
+    """
+    bcftools view \
+        --samples-file ${sample_list} \
+        --force-samples \
+        --output-type z --output ${sample_list.simpleName}_${vcf.simpleName}.vcf.gz \
+        ${vcf}
+    """
+}

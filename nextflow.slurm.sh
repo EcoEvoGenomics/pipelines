@@ -12,10 +12,11 @@
 # CHOOSE: PIPELINE
 pipeline=population_structure
 
-# CONFIGURE: NEXTFLOW
-module load Miniconda3/22.11.1-1
+# CONFIGURE: NEXTFLOW, CONDA, SINGULARITY (already enabled on Saga)
+module load Miniconda3/23.10.0-1
 source ${EBROOTMINICONDA3}/bin/activate
 conda activate /cluster/projects/nn10082k/conda_group/Nextflow25.04.6
+conda clean --yes --index-cache
 
 # CONFIGURE: NEXTFLOW OPTIONS
 nextflow -log .nextflow/nextflow.log run pipelines/${pipeline}.nf \
