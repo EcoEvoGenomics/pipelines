@@ -12,6 +12,7 @@ process REHH_LOAD_VCF {
     script:
     """
     #!/usr/bin/env Rscript
+    print(getwd())
     library("rehh")
 
     hh <- rehh::data2haplohh(
@@ -36,6 +37,7 @@ process REHH_SCAN_HAPLOTYPE_HOMOZYGOSITY {
     script:
     """
     #!/usr/bin/env Rscript
+    print(getwd())
     library("rehh")
 
     scan <- rehh::scan_hh(
@@ -66,6 +68,7 @@ process REHH_CALCULATE_IHS {
     script:
     """
     #!/usr/bin/env Rscript
+    print(getwd())
     library("rehh")
     
     ihs <- rehh::ihh2ihs(
@@ -100,6 +103,7 @@ process REHH_CALCULATE_XPEHH {
     script:
     """
     #!/usr/bin/env Rscript
+    print(getwd())
     library("rehh")
     
     xpehh <- rehh::ies2xpehh(
