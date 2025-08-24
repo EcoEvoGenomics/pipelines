@@ -2,6 +2,12 @@ process REHH_LOAD_VCF {
 
     label "REHH"
 
+    cpus 1
+    time { 2.h * task.attempt }
+    memory { 256.MB * Math.ceil(vcf.size() / 1024 ** 2) * task.attempt }
+    errorStrategy "retry"
+    maxRetries 2
+
     input:
     path(vcf)
     val(is_polarised)
@@ -12,6 +18,7 @@ process REHH_LOAD_VCF {
     script:
     """
     #!/usr/bin/env Rscript
+    print(getwd())
     library("rehh")
 
     hh <- rehh::data2haplohh(
@@ -27,6 +34,33 @@ process REHH_SCAN_HAPLOTYPE_HOMOZYGOSITY {
 
     label "REHH"
 
+    cpus {
+        def haplohh_size_mb = Math.ceil(haplohh.size() / 1024 ** 2)
+        haplohh_size_mb < 15
+        ? 8
+        : haplohh_size_mb < 30
+          ? 16
+          : 32
+    }
+    time {
+        def haplohh_size_mb = Math.ceil(haplohh.size() / 1024 ** 2)
+        task.exitStatus == 140
+        ? task.previousTrace.time * 2
+        : haplohh_size_mb < 5
+          ? 4.h
+          : haplohh_size_mb < 20
+            ? 8.h
+            : 16.h
+    }
+    memory {
+        def haplohh_size_mb = Math.ceil(haplohh.size() / 1024 ** 2)
+        task.exitStatus == 137
+        ? 256.MB * haplohh_size_mb * task.attempt
+        : 256.MB * haplohh_size_mb
+    }
+    errorStrategy "retry"
+    maxRetries 3
+
     input:
     path(haplohh)
 
@@ -36,10 +70,12 @@ process REHH_SCAN_HAPLOTYPE_HOMOZYGOSITY {
     script:
     """
     #!/usr/bin/env Rscript
+    print(getwd())
     library("rehh")
 
     scan <- rehh::scan_hh(
-        haplohh = readRDS("${haplohh.toString()}")
+        haplohh = readRDS("${haplohh.toString()}"),
+        threads = ${task.cpus}
     )
 
     write.csv(scan, row.names = FALSE, file = "${haplohh.simpleName}.hh.csv")
@@ -49,6 +85,12 @@ process REHH_SCAN_HAPLOTYPE_HOMOZYGOSITY {
 process REHH_CALCULATE_IHS {
 
     label "REHH"
+
+    cpus 1
+    time { 2.h * task.attempt }
+    memory { 16.MB * Math.ceil(csv.size() / 1024 ** 2) * task.attempt }
+    errorStrategy "retry"
+    maxRetries 2
 
     input:
     path(csv)
@@ -66,6 +108,7 @@ process REHH_CALCULATE_IHS {
     script:
     """
     #!/usr/bin/env Rscript
+    print(getwd())
     library("rehh")
     
     ihs <- rehh::ihh2ihs(
@@ -91,6 +134,12 @@ process REHH_CALCULATE_XPEHH {
 
     label "REHH"
 
+    cpus 1
+    time { 2.h * task.attempt }
+    memory { 16.MB * Math.ceil((csv_a.size() + csv_b.size()) / 1024 ** 2) * task.attempt }
+    errorStrategy "retry"
+    maxRetries 2
+
     input:
     tuple path(csv_a), path(csv_b)
 
@@ -100,6 +149,7 @@ process REHH_CALCULATE_XPEHH {
     script:
     """
     #!/usr/bin/env Rscript
+    print(getwd())
     library("rehh")
     
     xpehh <- rehh::ies2xpehh(
