@@ -6,7 +6,7 @@ n_chroms: 30
 scaffold_name: scaffold
 
 ########## VCF Diagnostics ############
-diag_vcfdir:
+diag_vcf: /Users/eriksro/Documents/GitHub/pipelines
 ld_thin: 0.9
 ld_bin_size: 1000
 ld_window: 100
@@ -14,7 +14,7 @@ ld_window_kb: 1000
 
 
 ######### Population Structure ########
-vcf: 
+ps_vcf: 
 exclude_chroms: mtDNA
 filter_mind: 0.2
 filter_geno: 0.2
