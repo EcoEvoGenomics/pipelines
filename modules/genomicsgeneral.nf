@@ -2,6 +2,7 @@ process GET_GENOMICS_GENERAL {
 
     // Obtains Simon Martin's genomics_general repository
     // See https://simonmartinlab.org/software/
+    // Also replace "NaN" with "nan" for more recent versions of Numpy
 
     label "SYSTEM"
 

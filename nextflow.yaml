@@ -5,6 +5,14 @@ ref_ploidy:
 n_chroms: 30
 scaffold_name: scaffold
 
+########## VCF Diagnostics ############
+diag_vcfdir:
+ld_thin: 0.9
+ld_bin_size: 1000
+ld_window: 100
+ld_window_kb: 1000
+
+
 ######### Population Structure ########
 vcf: 
 exclude_chroms: mtDNA
@@ -26,12 +34,8 @@ filt_inclusions: 'QUAL>20 & FMT/DP>5 & FMT/DP<75'
 mafft_iterations: 1000
 iqtree_bootstraps: 1000
 
-########## Window Statistics ##########
-ws_vcfdir:
-ld_thin: 0.9
-ld_bin_size: 1000
-ld_window: 100
-ld_window_kb: 1000
+########## Popgen Windows #############
+pw_vcfdir:
 gg_sliding_window: 100000
 gg_min_sites: 10
 gg_format: phased
