@@ -7,7 +7,7 @@ nextflow.preview.output = true
 
 workflow {
     main:
-    vcf = file(params.vcf)
+    vcf = file(params.ps_vcf)
     PLINK_INIT_BEDFILES(vcf, params.n_chroms)
     PLINK_EXCLUDE_CHROMS(PLINK_INIT_BEDFILES.out, params.exclude_chroms)
     PLINK_FILTER(PLINK_EXCLUDE_CHROMS.out, params.filter_mind, params.filter_geno, params.filter_maf)

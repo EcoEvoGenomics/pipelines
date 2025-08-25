@@ -140,3 +140,23 @@ process BCFTOOLS_PICK_SAMPLES {
         ${vcf}
     """
 }
+
+process BCFTOOLS_SAMPLE_VCF {
+
+    label "BCFTOOLS"
+
+    input:
+    tuple path(vcf), path(csi)
+    val(n_sites)
+
+    output:
+    path("${vcf.simpleName}.sample.vcf.gz")
+
+    script:
+    """
+    total_sites=\$(bcftools index -n ${vcf})
+    bcftools query --format '%CHROM\\t%POS' ${vcf} > chr_pos.txt
+    shuf -n ${n_sites} chr_pos.txt | sort -V > chr_pos_sampled.txt
+    bcftools view -R chr_pos_sampled.txt -O z -o ${vcf.simpleName}.sample.vcf.gz ${vcf}
+    """
+}
