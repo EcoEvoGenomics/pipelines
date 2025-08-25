@@ -302,7 +302,7 @@ process PLOT_PLINK_LD_DECAY {
     #!/usr/bin/env Rscript
     tbl <- read.table("${ld_decay_bins.toString()}", header = TRUE)
     pdf("${ld_decay_bins}.pdf")
-    plot(data = tbl, AVG_R2 ~ DIST, col = rgb(0, 0, 0, 0.05), pch = 20)
+    plot(data = tbl, AVG_R2 ~ DIST, col = rgb(0, 0, 0, 0.05), pch = 20, main = "LD DECAY")
     dev.off()
     """
 }

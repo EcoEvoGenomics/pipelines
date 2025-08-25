@@ -6,12 +6,13 @@ n_chroms: 30
 scaffold_name: scaffold
 
 ########## VCF Diagnostics ############
-diag_vcf: /Users/eriksro/Documents/GitHub/pipelines
+diag_vcf: 
+n_sampled_sites: 100000
 ld_thin: 0.9
 ld_bin_size: 1000
 ld_window: 100
 ld_window_kb: 1000
-
+snpden_binsize: 100000
 
 ######### Population Structure ########
 ps_vcf: 
