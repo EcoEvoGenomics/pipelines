@@ -64,7 +64,7 @@ process GENOMICS_GENERAL_POPGEN_WINDOWS {
     echo '-f ${format}' >> popgenWindows.args
     echo '-T ${task.cpus}' >> popgenWindows.args
     echo '--popsFile sample.pops' >> popgenWindows.args
-    cat sample.pops | awk '{print \$2}' | sed 's/^/-p /' | uniq >> popgenWindows.args
+    cat sample.pops | awk '{print \$2}' | sed 's/^/-p /' | sort | uniq >> popgenWindows.args
 
     cat popgenWindows.args | xargs python popgenWindows.py
     """
