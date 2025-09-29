@@ -47,6 +47,6 @@ hs_vcfdir:
 is_polarised: false
 populations: 
 ihs_freqbin: 1
-cand_pval: 6
+cand_pval: 0.01
 cand_window: 1E6
 cand_overlap: 1E5

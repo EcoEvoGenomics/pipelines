@@ -119,7 +119,7 @@ process REHH_CALCULATE_IHS {
     cr <- rehh::calc_candidate_regions(
         scan = ihs,
         pval = TRUE,
-        threshold = ${cand_pval},
+        threshold = -log10(${cand_pval} / nrow(ihs\$ihs)),
         window_size = ${cand_window},
         overlap = ${cand_overlap}
     )
@@ -167,7 +167,7 @@ process REHH_CALCULATE_XPEHH {
     cr <- rehh::calc_candidate_regions(
         scan = xpehh,
         pval = TRUE,
-        threshold = ${cand_pval},
+        threshold = -log10(${cand_pval} / nrow(xpehh)),
         window_size = ${cand_window},
         overlap = ${cand_overlap}
     )
