@@ -30,7 +30,7 @@ workflow {
     | filter { scan -> scan[0] != scan[1] } \
     | map { scan -> scan.sort() } \
     | unique
-    REHH_CALCULATE_XPEHH(pairwise_pop_scans)
+    REHH_CALCULATE_XPEHH(pairwise_pop_scans, params.cand_pval, params.cand_window, params.cand_overlap)
 
     publish:
     haplohh = REHH_LOAD_VCF.out.rds
@@ -39,6 +39,7 @@ workflow {
     ihs_rds = REHH_CALCULATE_IHS.out.rds
     ihs_candidate_regions = REHH_CALCULATE_IHS.out.candidates
     xpehh = REHH_CALCULATE_XPEHH.out.csv
+    xpehh_candidate_regions = REHH_CALCULATE_XPEHH.out.candidates
 }
 
 output {
@@ -48,4 +49,5 @@ output {
     ihs_rds { path "haplotype_selection/gw_ihs" }
     ihs_candidate_regions { path "haplotype_selection/gw_ihs" }
     xpehh { path "haplotype_selection/gw_xpehh" }
+    xpehh_candidate_regions { path "haplotype_selection/gw_xpehh" }
 }

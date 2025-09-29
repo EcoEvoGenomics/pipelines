@@ -103,7 +103,7 @@ process REHH_CALCULATE_IHS {
     output:
     path("${csv.simpleName}.ihs.csv"), emit: csv
     path("${csv.simpleName}.ihs.rds"), emit: rds
-    path("${csv.simpleName}.cand.csv"), emit: candidates
+    path("${csv.simpleName}.ihs.cand.csv"), emit: candidates
 
     script:
     """
@@ -125,7 +125,7 @@ process REHH_CALCULATE_IHS {
     )
 
     write.csv(ihs\$ihs, row.names = FALSE, file = "${csv.simpleName}.ihs.csv")
-    write.csv(cr, row.names = FALSE, file = "${csv.simpleName}.cand.csv")
+    write.csv(cr, row.names = FALSE, file = "${csv.simpleName}.ihs.cand.csv")
     saveRDS(ihs, file = "${csv.simpleName}.ihs.rds")
     """
 }
@@ -142,9 +142,13 @@ process REHH_CALCULATE_XPEHH {
 
     input:
     tuple path(csv_a), path(csv_b)
+    val(cand_pval)
+    val(cand_window)
+    val(cand_overlap)
 
     output:
     path("${csv_a.simpleName}_${csv_b.simpleName}.xpehh.csv"), emit: csv
+    path("${csv_a.simpleName}_${csv_b.simpleName}.xpehh.cand.csv"), emit: candidates
 
     script:
     """
@@ -160,6 +164,15 @@ process REHH_CALCULATE_XPEHH {
         include_freq = TRUE
     )
 
+    cr <- rehh::calc_candidate_regions(
+        scan = xpehh,
+        pval = TRUE,
+        threshold = ${cand_pval},
+        window_size = ${cand_window},
+        overlap = ${cand_overlap}
+    )
+
     write.csv(xpehh, row.names = FALSE, file = "${csv_a.simpleName}_${csv_b.simpleName}.xpehh.csv")
+    write.csv(cr, row.names = FALSE, file = "${csv_a.simpleName}_${csv_b.simpleName}.xpehh.cand.csv")
     """
 }
