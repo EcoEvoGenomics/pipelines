@@ -99,6 +99,9 @@ process REHH_CALCULATE_IHS {
     val(cand_pval)
     val(cand_window)
     val(cand_overlap)
+    val(cand_min_n_mrk)
+    val(cand_min_n_extr_mrk)
+    val(cand_min_perc_extr_mrk)
 
     output:
     path("${csv.simpleName}.ihs.csv"), emit: csv
@@ -121,7 +124,10 @@ process REHH_CALCULATE_IHS {
         pval = TRUE,
         threshold = -log10(${cand_pval} / nrow(ihs\$ihs)),
         window_size = ${cand_window},
-        overlap = ${cand_overlap}
+        overlap = ${cand_overlap},
+        min_n_mrk = ${cand_min_n_mrk},
+        min_n_extr_mrk = ${cand_min_n_extr_mrk},
+        min_perc_extr_mrk = ${cand_min_perc_extr_mrk}
     )
 
     write.csv(ihs\$ihs, row.names = FALSE, file = "${csv.simpleName}.ihs.csv")
@@ -145,6 +151,9 @@ process REHH_CALCULATE_XPEHH {
     val(cand_pval)
     val(cand_window)
     val(cand_overlap)
+    val(cand_min_n_mrk)
+    val(cand_min_n_extr_mrk)
+    val(cand_min_perc_extr_mrk)
 
     output:
     path("${csv_a.simpleName}_${csv_b.simpleName}.xpehh.csv"), emit: csv
@@ -169,7 +178,10 @@ process REHH_CALCULATE_XPEHH {
         pval = TRUE,
         threshold = -log10(${cand_pval} / nrow(xpehh)),
         window_size = ${cand_window},
-        overlap = ${cand_overlap}
+        overlap = ${cand_overlap},
+        min_n_mrk = ${cand_min_n_mrk},
+        min_n_extr_mrk = ${cand_min_n_extr_mrk},
+        min_perc_extr_mrk = ${cand_min_perc_extr_mrk}
     )
 
     write.csv(xpehh, row.names = FALSE, file = "${csv_a.simpleName}_${csv_b.simpleName}.xpehh.csv")

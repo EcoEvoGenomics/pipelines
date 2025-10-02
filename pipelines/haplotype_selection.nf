@@ -20,7 +20,17 @@ workflow {
     | map { scan -> tuple(scan.name.tokenize("_").get(0), scan) } \
     | groupTuple(by: 0) \
     | JOIN_GROUPED_CSVS
-    REHH_CALCULATE_IHS(pop_scans, params.is_polarised, params.ihs_freqbin, params.cand_pval, params.cand_window, params.cand_overlap)
+    REHH_CALCULATE_IHS(
+        pop_scans,
+        params.is_polarised,
+        params.ihs_freqbin,
+        params.cand_pval,
+        params.cand_window,
+        params.cand_overlap,
+        params.cand_min_n_mrk,
+        params.cand_min_n_extr_mrk,
+        params.cand_min_perc_extr_mrk
+    )
 
     // Pairwise channel self-comparison without item self-comparison by David Mas-Ponte
     // https://github.com/nextflow-io/nextflow/discussions/2109
@@ -30,7 +40,15 @@ workflow {
     | filter { scan -> scan[0] != scan[1] } \
     | map { scan -> scan.sort() } \
     | unique
-    REHH_CALCULATE_XPEHH(pairwise_pop_scans, params.cand_pval, params.cand_window, params.cand_overlap)
+    REHH_CALCULATE_XPEHH(
+        pairwise_pop_scans,
+        params.cand_pval,
+        params.cand_window,
+        params.cand_overlap,
+        params.cand_min_n_mrk,
+        params.cand_min_n_extr_mrk,
+        params.cand_min_perc_extr_mrk
+    )
 
     publish:
     haplohh = REHH_LOAD_VCF.out.rds

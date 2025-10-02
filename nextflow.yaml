@@ -49,4 +49,7 @@ populations:
 ihs_freqbin: 1
 cand_pval: 0.01
 cand_window: 1E6
-cand_overlap: 1E5
+cand_overlap: 0
+cand_min_n_mrk: 1
+cand_min_n_extr_mrk: 3
+cand_min_perc_extr_mrk: 0
