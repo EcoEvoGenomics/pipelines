@@ -189,12 +189,12 @@ process REHH_CALCULATE_XPEHH {
     """
 }
 
-process REHH_PLOT_SCAN {
+process REHH_PARSE_PLOT_SCAN {
 
     label "RPLOT"
 
     input:
-    path(plotscript)
+    path(parsescript)
     path(scans)
     path(cands)
     path(gff)
@@ -203,12 +203,13 @@ process REHH_PLOT_SCAN {
     val(height_mm)
 
     output:
-    path("*.png")
-    path("**/*.png")
+    path("*.png"), emit: mainplot
+    path("**/*.png"), emit: candplots
+    path("**/*.tsv"), emit: candgenes
 
     script:
     """
-    Rscript ${plotscript} ${scans} ${cands} ${gff} ${cand_pval} ${width_mm} ${height_mm}
+    Rscript ${parsescript} ${scans} ${cands} ${gff} ${cand_pval} ${width_mm} ${height_mm}
     rm Rplots.pdf
     """
 }

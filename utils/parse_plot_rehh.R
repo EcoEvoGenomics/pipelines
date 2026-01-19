@@ -133,7 +133,7 @@ chr_labels[21:28] <- ""
 names(chr_labels) <- chr_names
 
 scan_names <- unique(parsed_scans$SCAN)
-scan_labels <- basename(readLines(input_scans))
+scan_labels <- tools::file_path_sans_ext((basename(readLines(input_scans))))
 names(scan_labels) <- scan_names
 
 facet_labels <- c(chr_labels, scan_labels)
@@ -271,7 +271,7 @@ add_scan_labels <- function(plot, labels) {
 manhattan <- add_scan_labels(manhattan, scan_labels)
 
 # -------- Output main plot ----------------------------------------------------
-outname <- paste(tools::file_path_sans_ext(input_scans), ".png", sep = "")
+outname <- paste(tools::file_path_sans_ext(input_scans), "_main.png", sep = "")
 ggsave(
   manhattan,
   filename = outname,
@@ -284,7 +284,10 @@ print(paste("Main plot saved to ", outname, sep = ""))
 
 # -------- Plot candidate region Manhattan plots -------------------------------
 
-print("Plotting candidate region plots ...")
+print("Plotting candidate region plots, writing genes in regions to file ...")
+
+cand_outputdir <- tools::file_path_sans_ext(input_scans)
+dir.create(cand_outputdir)
 
 for (i in seq_len(nrow(parsed_cands))) {
 
@@ -292,6 +295,9 @@ for (i in seq_len(nrow(parsed_cands))) {
   focal_scan <- parsed_cands$SCAN[i]
   region_start <- parsed_cands$START[i]
   region_end <- parsed_cands$END[i]
+
+  chr_outputdir <- paste(cand_outputdir, "/", chr, sep = "")
+  dir.create(chr_outputdir)
 
   region_scans <- parsed_scans |>
     filter(CHR == chr) |>
@@ -312,6 +318,18 @@ for (i in seq_len(nrow(parsed_cands))) {
     filter(START > region_start) |>
     filter(END < region_end) |>
     mutate(SCAN = focal_scan)
+
+  candgenes_outname <- paste(
+    chr_outputdir, "/",
+    chr, "_", format(region_start, scientific = FALSE),
+    "_", format(region_end, scientific = FALSE), ".tsv",
+    sep = ""
+  )
+
+  region_labelled_annots |>
+    select(!DIRECTED_SYMBOL) |>
+    select(!SCAN) |>
+    write_tsv(file = candgenes_outname)
 
   candhattan <- ggplot(region_scans, aes(x = POSITION, y = LOGPVALUE)) +
     coord_cartesian(clip = "on") +
@@ -396,16 +414,15 @@ for (i in seq_len(nrow(parsed_cands))) {
 
   candhattan <- add_scan_labels(candhattan, scan_labels)
 
-  outname <- paste(
-    tools::file_path_sans_ext(input_scans), "/",
+  candplot_outname <- paste(
+    chr_outputdir, "/",
     chr, "_", format(region_start, scientific = FALSE),
     "_", format(region_end, scientific = FALSE), ".png",
     sep = ""
   )
   ggsave(
     candhattan,
-    filename = outname,
-    create.dir = TRUE,
+    filename = candplot_outname,
     dpi = 1600,
     units = "mm",
     width = width_mm,
@@ -415,7 +432,7 @@ for (i in seq_len(nrow(parsed_cands))) {
     paste(
       "Candidate region plot ",
       i, "/", nrow(parsed_cands),
-      " saved to ", outname,
+      " saved to ", candplot_outname,
       sep = ""
     )
   )
