@@ -152,11 +152,14 @@ process BCFTOOLS_SAMPLE_VCF {
     output:
     path("${vcf.simpleName}.sample.vcf.gz")
 
+    // This memory-efficient shuffle of large files is based on:
+    // https://stackoverflow.com/questions/40814785/bash-shuffle-a-file-that-is-too-large-to-fit-in-memory
+
     script:
     """
     total_sites=\$(bcftools index -n ${vcf})
     bcftools query --format '%CHROM\\t%POS' ${vcf} > chr_pos.txt
-    shuf -n ${n_sites} chr_pos.txt | sort -V > chr_pos_sampled.txt
+    awk 'BEGIN{srand();} {printf "%06d %s\\n", rand()*1000000, \$0;}' chr_pos.txt | sort -n | cut -c8- | head -n ${n_sites} > chr_pos_sampled.txt
     bcftools view -R chr_pos_sampled.txt -O z -o ${vcf.simpleName}.sample.vcf.gz ${vcf}
     """
 }
