@@ -152,11 +152,30 @@ process BCFTOOLS_SAMPLE_VCF {
     output:
     path("${vcf.simpleName}.sample.vcf.gz")
 
+    // Reservoir-sampling awk command courtesy of GPT UiO (GPT-5; https://gpt.uio.no/)
+
     script:
     """
     total_sites=\$(bcftools index -n ${vcf})
     bcftools query --format '%CHROM\\t%POS' ${vcf} > chr_pos.txt
-    shuf -n ${n_sites} chr_pos.txt | sort -V > chr_pos_sampled.txt
+    
+    awk '
+    BEGIN {
+      k = ${n_sites}; srand();
+    }
+    {
+      if (NR <= k) {
+        buf[NR] = \$0;
+      } else {
+        i = int(rand() * NR) + 1;
+        if (i <= k) buf[i] = \$0;
+      }
+    }
+    END {
+      for (i = 1; i <= k && i in buf; i++) print buf[i];
+    }
+    ' chr_pos.txt > chr_pos_sampled.txt
+
     bcftools view -R chr_pos_sampled.txt -O z -o ${vcf.simpleName}.sample.vcf.gz ${vcf}
     """
 }
