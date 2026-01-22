@@ -94,8 +94,20 @@ process PLOT_VCFTOOLS_VCF_STATS {
     script:
     """
     #!/usr/bin/env Rscript
-    frq <- read.table("${frq.toString()}", skip = 1, col.names = c("CHROM", "POS", "N_ALLELES", "N_CHR", "A1", "A2"))
-    frq\$MAF <- frq[c("A1", "A2")] |> apply(1, \\(x) min(x))
+
+    # Count greatest number of alleles in VCF to format frq table for MAF
+    frq <- "${frq.toString()}"
+    skip_header_line <- 1L
+
+    field_counts <- count.fields(frq)
+    field_counts <- field_counts[-seq_len(skip_header_line)]
+    n_nonallele_cols <- 4
+    n_alleles <- max(field_counts, na.rm = TRUE) - n_nonallele_cols
+    col_names <- c("CHROM","POS","N_ALLELES","N_CHR", paste0("A", seq_len(n_alleles)))
+
+    frq <- read.table(frq, skip = skip_header_line, header = FALSE, fill = TRUE, col.names = col_names, na.strings = c("", "NA"), stringsAsFactors = FALSE)
+    
+    frq\$MAF <- frq[grep("^A", names(frq), value = TRUE)] |> apply(1, \\(x) min(x))
     idepth <- read.table("${idepth.toString()}", header = TRUE)
     imiss <- read.table("${imiss.toString()}", header = TRUE)
     ldepth_mean <- read.table("${ldepth_mean.toString()}", header = TRUE)
@@ -103,20 +115,15 @@ process PLOT_VCFTOOLS_VCF_STATS {
     lmiss <- read.table("${lmiss.toString()}", header = TRUE)
     het <- read.table("${het.toString()}", header = TRUE)
 
-    maf_density <- data.frame(MAF = density(frq\$MAF)\$x, DENSITY = density(frq\$MAF)\$y)
-    ldepth_mean_density <- data.frame(MEAN_DEPTH = density(ldepth_mean\$MEAN_DEPTH)\$x, DENSITY = density(ldepth_mean\$MEAN_DEPTH)\$y)
-    lqual_density <- data.frame(QUAL = density(lqual\$QUAL)\$x, DENSITY = density(lqual\$QUAL)\$y)
-    lmiss_density <- data.frame(F_MISS = density(lmiss\$F_MISS)\$x, DENSITY = density(lmiss\$F_MISS)\$y)
-
     pdf("${vcf.simpleName}.stats.pdf", width = 20, height = 20)
     par(mfrow = c(3, 3))
     hist(het\$F, main = "INDV INBREEDING COEFFICIENT (F)")
     hist(idepth\$MEAN_DEPTH, main = "INDV MEAN DEPTH")
     hist(imiss\$F_MISS, main = "INDV MISSINGNESS")
-    plot(data = ldepth_mean_density, DENSITY ~ MEAN_DEPTH, main = "SITE MEAN DEPTH", type = "l", col = "red")
-    plot(data = lqual_density, DENSITY ~ QUAL, main = "SITE QUALITY", type = "l", col = "red")
-    plot(data = lmiss_density, DENSITY ~ F_MISS, main = "SITE MISSINGNESS", type = "l", col = "red")
-    plot(data = maf_density, DENSITY ~ MAF, main = "SITE MINOR ALLELE FREQUENCY", type = "l", col = "red")
+    hist(ldepth_mean\$MEAN_DEPTH[ldepth_mean\$MEAN_DEPTH <= quantile(ldepth_mean\$MEAN_DEPTH, 0.99)], main = "SITE MEAN DEPTH (Cutoff at 99th percentile)")
+    hist(lqual\$QUAL[lqual\$QUAL <= quantile(lqual\$QUAL, 0.99)], main = "SITE QUALITY (Cutoff at 99th percentile)")
+    hist(lmiss\$F_MISS, main = "SITE MISSINGNESS")
+    hist(frq\$MAF, main = "SITE MINOR ALLELE FREQUENCY")
     dev.off()
     """
 }
