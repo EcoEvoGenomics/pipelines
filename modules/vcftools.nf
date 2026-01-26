@@ -46,6 +46,28 @@ process VCFTOOLS_VCF_STATS {
     """
 }
 
+process VCFTOOLS_CALCULATE_PAIRWISE_FST {
+
+    label "VCFTOOLS"
+
+    input:
+    path(vcf)
+    tuple path(pop_a_list), path(pop_b_list)
+
+    output:
+    path("${pop_a_list.simpleName}_${pop_b_list.simpleName}.weir.fst"), emit: full
+    path("${pop_a_list.simpleName}_${pop_b_list.simpleName}.out"), emit: means
+
+    script:
+    """
+    vcftools --gzvcf "${vcf}" \
+    --weir-fst-pop "${pop_a_list}" \
+    --weir-fst-pop "${pop_b_list}" \
+    --out "./${pop_a_list.simpleName}_${pop_b_list.simpleName}" \
+    &> "./${pop_a_list.simpleName}_${pop_b_list.simpleName}.out"
+    """
+}
+
 process PLOT_VCFTOOLS_SNP_DENSITY {
 
     label "RBASE"

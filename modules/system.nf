@@ -51,7 +51,7 @@ process WRITE_POPULATION_CENSUS_LIST {
     script:
     """
     cat ${metadata} | awk -F, '{if (\$3 == "${population}") print \$1}' > "${population}.list"
-    if [[ \$(wc -l < ${population}.list) -eq 0 ]]; then
+    if [[ \$(wc -l < "${population}.list") -eq 0 ]]; then
         echo "ERROR: The population ${population} has no members."
         exit 1
     fi
