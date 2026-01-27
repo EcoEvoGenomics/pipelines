@@ -147,7 +147,7 @@ process PLINK_PCA {
     tuple path(bed), path(bim), path(fam), val(n_chroms)
 
     output:
-    tuple path("${bed.simpleName}.eigenvec"), path("${bed.simpleName}.eigenval")
+    tuple path("${bed.simpleName}.eigenvec"), path("${bed.simpleName}.eigenval"), path("plink.log")
 
     script:
     """
