@@ -2,6 +2,7 @@ include { WRITE_POPULATION_CENSUS_LIST; JOIN_GROUPED_CSVS } from "../modules/sys
 include { BCFTOOLS_PICK_SAMPLES } from "../modules/bcftools.nf"
 include { REHH_LOAD_VCF; REHH_SCAN_HAPLOTYPE_HOMOZYGOSITY } from "../modules/rehh.nf"
 include { REHH_CALCULATE_IHS; REHH_CALCULATE_XPEHH } from "../modules/rehh.nf"
+include { REHH_PARSE_PLOT_SCAN } from "../modules/rehh.nf"
 
 nextflow.preview.output = true
 
@@ -50,6 +51,24 @@ workflow {
         params.cand_min_perc_extr_mrk
     )
 
+    xpehh_resultfile_list = REHH_CALCULATE_XPEHH.out.csv \
+    | map { xpehh -> "${xpehh.toString()}" } \
+    | collectFile(name: "xpehh.list", newLine: true)
+
+    xpehh_candfile_list = REHH_CALCULATE_XPEHH.out.candidates \
+    | map { cand -> "${cand.toString()}" } \
+    | collectFile(name: "cand.list", newLine: true)
+
+    REHH_PARSE_PLOT_SCAN(
+        file("${launchDir}/utils/parse_plot_rehh.R"),
+        xpehh_resultfile_list,
+        xpehh_candfile_list,
+        params.ref_gff,
+        params.cand_pval,
+        170,
+        25
+    )
+
     publish:
     haplohh = REHH_LOAD_VCF.out.rds
     pop_scans = JOIN_GROUPED_CSVS.out.joined
@@ -58,6 +77,9 @@ workflow {
     ihs_candidate_regions = REHH_CALCULATE_IHS.out.candidates
     xpehh = REHH_CALCULATE_XPEHH.out.csv
     xpehh_candidate_regions = REHH_CALCULATE_XPEHH.out.candidates
+    xpehh_parsed_main = REHH_PARSE_PLOT_SCAN.output.mainplot
+    xpehh_parsed_candplots = REHH_PARSE_PLOT_SCAN.output.candplots
+    xpehh_parsed_candgenes = REHH_PARSE_PLOT_SCAN.output.candgenes
 }
 
 output {
@@ -68,4 +90,7 @@ output {
     ihs_candidate_regions { path "haplotype_selection/gw_ihs" }
     xpehh { path "haplotype_selection/gw_xpehh" }
     xpehh_candidate_regions { path "haplotype_selection/gw_xpehh" }
+    xpehh_parsed_main { path "haplotype_selection/gw_xpehh" }
+    xpehh_parsed_candplots { path "haplotype_selection/gw_xpehh" }
+    xpehh_parsed_candgenes { path "haplotype_selection/gw_xpehh" }
 }
