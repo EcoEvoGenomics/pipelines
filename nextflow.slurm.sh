@@ -6,7 +6,7 @@
 #SBATCH --error=SLURM-%j-%x.err
 #SBATCH --account=nn10082k
 #SBATCH --tasks=1
-#SBATCH --mem=4G
+#SBATCH --mem=6G
 #SBATCH --time=12:00:00
 
 # CHOOSE: PIPELINE
