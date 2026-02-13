@@ -9,16 +9,18 @@ workflow {
     main:
     vcf = file(params.diag_vcf)
     
+    // Get full, non-downsampled SNP density
     VCFTOOLS_SNP_DENSITY(vcf, params.snpden_binsize, params.scaffold_name)
     PLOT_VCFTOOLS_SNP_DENSITY(VCFTOOLS_SNP_DENSITY.out)
 
-    PLINK_INIT_BEDFILES(vcf, params.n_chroms)
+    // All other stats from a subsampled VCF for memory efficacy
+    vcf_indexed = BCFTOOLS_INDEX(vcf)
+    vcf_sampled = BCFTOOLS_SAMPLE_VCF(vcf_indexed, params.n_sampled_sites)
+
+    PLINK_INIT_BEDFILES(vcf_sampled, params.n_chroms)
     PLINK_PAIRWISE_LD(PLINK_INIT_BEDFILES.out, params.ld_thin, params.ld_window, params.ld_window_kb)
     PARSE_PLINK_LD_DECAY(PLINK_PAIRWISE_LD.out, params.scaffold_name, params.ld_bin_size)
     PLOT_PLINK_LD_DECAY(PARSE_PLINK_LD_DECAY.out, params.ld_window_kb)
-
-    vcf_indexed = BCFTOOLS_INDEX(vcf)
-    vcf_sampled = BCFTOOLS_SAMPLE_VCF(vcf_indexed, params.n_sampled_sites)
 
     VCFTOOLS_VCF_STATS(vcf_sampled)
     frq = VCFTOOLS_VCF_STATS.out.frq
