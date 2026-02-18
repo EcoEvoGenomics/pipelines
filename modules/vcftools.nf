@@ -68,6 +68,65 @@ process VCFTOOLS_CALCULATE_PAIRWISE_FST {
     """
 }
 
+process VCFTOOLS_CALCULATE_RELATEDNESS {
+
+    label "VCFTOOLS"
+
+    input:
+    path(vcf)
+
+    output:
+    path("${vcf.simpleName}.relatedness2"), emit: relatedness
+
+    script:
+    """
+    vcftools --gzvcf "${vcf}" \
+    --relatedness2 \
+    --out "./${vcf.simpleName}"
+    """
+}
+
+process PLOT_VCFTOOLS_RELATEDNESS {
+
+    label "RPLOT"
+
+    input:
+    path(relatedness)
+
+    output:
+    path("${relatedness.simpleName}.png")
+
+    script:
+    """
+    #!/usr/bin/env Rscript
+    library(ggplot2)
+
+    max_phi <- 0.5
+    tbl <- read.table("${relatedness.toString()}", header = TRUE)
+    n_inds <- tbl\$INDV1 |> unique() |> length()
+
+    plt <- tbl |>
+        ggplot(mapping = aes(x = INDV1, y = INDV2, fill = (10^RELATEDNESS_PHI) / 10^max_phi)) +
+        coord_equal(expand = expansion(mult = 0)) +
+        geom_raster(show.legend = FALSE) +
+        scale_fill_viridis_c(option = "inferno") +
+        theme(
+            axis.text.y = element_text(size = 3, hjust = 1, vjust = 0.5),
+            axis.text.x = element_text(size = 3, hjust = 1, vjust = 0.5, angle = 90),
+            axis.ticks = element_line(linewidth = 0.1),
+            axis.title = element_blank()
+        )
+
+    inches_per_ind <- 0.05
+    ggsave(
+        filename = "${relatedness.simpleName}.png",
+        dpi = 600,
+        height = n_inds * inches_per_ind,
+        width = n_inds * inches_per_ind
+    )
+    """
+}
+
 process PLOT_VCFTOOLS_SNP_DENSITY {
 
     label "RBASE"
