@@ -23,7 +23,7 @@ workflow {
     PARSE_PLINK_LD_DECAY(PLINK_PAIRWISE_LD.out, params.scaffold_name, params.ld_bin_size)
     PLOT_PLINK_LD_DECAY(PARSE_PLINK_LD_DECAY.out, params.ld_window_kb)
 
-    relatedness = VCFTOOLS_CALCULATE_RELATEDNESS(vcf)
+    relatedness = VCFTOOLS_CALCULATE_RELATEDNESS(vcf_sampled)
     relatedness_plot = PLOT_VCFTOOLS_RELATEDNESS(relatedness)
 
     VCFTOOLS_VCF_STATS(vcf_sampled)
