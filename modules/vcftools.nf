@@ -102,13 +102,20 @@ process PLOT_VCFTOOLS_RELATEDNESS {
     library(ggplot2)
 
     max_phi <- 0.5
+    second_degree_relative_min_phi <- 1/(2^(7/2))
+
     tbl <- read.table("${relatedness.toString()}", header = TRUE)
     n_inds <- tbl\$INDV1 |> unique() |> length()
 
     plt <- tbl |>
         ggplot(mapping = aes(x = INDV1, y = INDV2, fill = (10^RELATEDNESS_PHI) / 10^max_phi)) +
-        coord_equal(expand = expansion(mult = 0)) +
+        coord_equal(expand = FALSE) +
         geom_raster(show.legend = FALSE) +
+        geom_point(
+            mapping = aes(alpha = (INDV1 != INDV2) & (RELATEDNESS_PHI > second_degree_relative_min_phi)),
+            pch = ".", colour = "red", show.legend = FALSE
+        ) +
+        scale_alpha_manual(values = c(0, 1)) +
         scale_fill_viridis_c(option = "inferno") +
         theme(
             axis.text.y = element_text(size = 3, hjust = 1, vjust = 0.5),
