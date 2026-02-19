@@ -107,7 +107,7 @@ process PLOT_VCFTOOLS_RELATEDNESS {
 
     plt <- tbl |>
         ggplot(mapping = aes(x = INDV1, y = INDV2, fill = (10^RELATEDNESS_PHI) / 10^max_phi)) +
-        coord_equal(expand = expansion(mult = 0)) +
+        coord_equal(expand = FALSE) +
         geom_raster(show.legend = FALSE) +
         scale_fill_viridis_c(option = "inferno") +
         theme(
