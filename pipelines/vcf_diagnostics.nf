@@ -14,18 +14,21 @@ workflow {
     VCFTOOLS_SNP_DENSITY(vcf, params.snpden_binsize, params.scaffold_name)
     PLOT_VCFTOOLS_SNP_DENSITY(VCFTOOLS_SNP_DENSITY.out)
 
-    // All other stats from a subsampled VCF for memory efficacy
-    vcf_indexed = BCFTOOLS_INDEX(vcf)
-    vcf_sampled = BCFTOOLS_SAMPLE_VCF(vcf_indexed, params.n_sampled_sites)
-
-    PLINK_INIT_BEDFILES(vcf_sampled, params.n_chroms)
+    // Linkage disequilbrium decay has its own thinning factor in the settings
+    PLINK_INIT_BEDFILES(vcf, params.n_chroms)
     PLINK_PAIRWISE_LD(PLINK_INIT_BEDFILES.out, params.ld_thin, params.ld_window, params.ld_window_kb)
     PARSE_PLINK_LD_DECAY(PLINK_PAIRWISE_LD.out, params.scaffold_name, params.ld_bin_size)
     PLOT_PLINK_LD_DECAY(PARSE_PLINK_LD_DECAY.out, params.ld_window_kb)
 
-    relatedness = VCFTOOLS_CALCULATE_RELATEDNESS(vcf_sampled)
-    relatedness_plot = PLOT_VCFTOOLS_RELATEDNESS(relatedness)
+    // For efficiency the remaining stats are run on a downsampled version of the VCF
+    vcf_indexed = BCFTOOLS_INDEX(vcf)
+    vcf_sampled = BCFTOOLS_SAMPLE_VCF(vcf_indexed, params.n_sampled_sites)
 
+    // Relatedness between individuals
+    relatedness = VCFTOOLS_CALCULATE_RELATEDNESS(vcf_sampled)
+    PLOT_VCFTOOLS_RELATEDNESS(relatedness)
+
+    // General stats for variants and individuals
     VCFTOOLS_VCF_STATS(vcf_sampled)
     frq = VCFTOOLS_VCF_STATS.out.frq
     idepth = VCFTOOLS_VCF_STATS.out.idepth
@@ -43,7 +46,7 @@ workflow {
     ld_decay = PARSE_PLINK_LD_DECAY.out
     ld_decay_plot = PLOT_PLINK_LD_DECAY.out
     relatedness = relatedness
-    relatedness_plot = relatedness_plot
+    relatedness_plot = PLOT_VCFTOOLS_RELATEDNESS.out
     frq = frq
     idepth = idepth
     imiss = imiss
