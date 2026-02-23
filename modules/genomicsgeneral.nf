@@ -45,7 +45,8 @@ process GENOMICS_GENERAL_POPGEN_WINDOWS {
     path(genomics_general)
     path(geno)
     path(metadata)
-    val(window)
+    val(window_size)
+    val(step_size)
     val(min_sites)
     val(format)
     val(compare_species)
@@ -57,7 +58,8 @@ process GENOMICS_GENERAL_POPGEN_WINDOWS {
     """
     cat ${metadata} | awk -F, '{print \$1 " " \$${compare_species ? 2 : 3}}' > sample.pops
 
-    echo '-w ${window}' >> popgenWindows.args
+    echo '-w ${window_size}' >> popgenWindows.args
+    echo '-s ${step_size}' >> popgenWindows.args
     echo '-m ${min_sites}' >> popgenWindows.args
     echo '-g ${geno}' >> popgenWindows.args
     echo '-o ${geno.simpleName}.csv' >> popgenWindows.args
