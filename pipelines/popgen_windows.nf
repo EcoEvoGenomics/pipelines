@@ -6,9 +6,18 @@ workflow {
     main:
     metadata = file(params.metadata)
     vcfs = Channel.fromPath("${params.pw_vcfdir}/**.vcf.gz")
-    GG = GET_GENOMICS_GENERAL()
-    geno = GENOMICS_GENERAL_VCF_TO_GENO(GG, vcfs)
-    GENOMICS_GENERAL_POPGEN_WINDOWS(GG, geno, metadata, params.gg_sliding_window, params.gg_min_sites, params.gg_format, params.gg_compare_species)
+    gg_repo = GET_GENOMICS_GENERAL()
+    geno_file = GENOMICS_GENERAL_VCF_TO_GENO(gg_repo, vcfs)
+    GENOMICS_GENERAL_POPGEN_WINDOWS(
+        gg_repo,
+        geno_file,
+        metadata,
+        params.pw_sliding_window,
+        params.pw_step_size,
+        params.pw_min_sites,
+        params.pw_input_format,
+        params.pw_compare_species
+    )
 
     publish:
     popgen = GENOMICS_GENERAL_POPGEN_WINDOWS.out

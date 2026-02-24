@@ -38,11 +38,12 @@ mafft_iterations: 1000
 iqtree_bootstraps: 1000
 
 ########## Popgen Windows #############
-pw_vcfdir:
-gg_sliding_window: 100000
-gg_min_sites: 10
-gg_format: phased
-gg_compare_species: true
+pw_vcfdir: 
+pw_sliding_window: 100000
+pw_step_size: 10000
+pw_min_sites: 10
+pw_input_format: phased
+pw_compare_species: true
 
 ######### Haplotype Selection #########
 hs_vcfdir: 
