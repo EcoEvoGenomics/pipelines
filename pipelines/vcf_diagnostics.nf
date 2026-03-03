@@ -9,20 +9,16 @@ workflow {
     main:
     vcf = file(params.vd_vcf)
     
-    // Get full, non-downsampled SNP density
-    VCFTOOLS_SNP_DENSITY(vcf, params.vd_snpden_binsize, params.ref_scaffold_name)
-    PLOT_VCFTOOLS_SNP_DENSITY(VCFTOOLS_SNP_DENSITY.out)
+    snp_density_whole_vcf = VCFTOOLS_SNP_DENSITY(vcf, params.vd_snpden_binsize, params.ref_scaffold_name)
+    PLOT_VCFTOOLS_SNP_DENSITY(snp_density_whole_vcf)
 
-    // For efficiency the remaining stats are run on a downsampled version of the VCF
     vcf_indexed = BCFTOOLS_INDEX(vcf)
-    vcf_sampled = BCFTOOLS_SAMPLE_VCF(vcf_indexed, params.vd_n_sampled_sites)
+    vcf_downsampled = BCFTOOLS_SAMPLE_VCF(vcf_indexed, params.vd_n_sampled_sites)
 
-    // Relatedness between individuals
-    relatedness = VCFTOOLS_CALCULATE_RELATEDNESS(vcf_sampled)
+    relatedness = VCFTOOLS_CALCULATE_RELATEDNESS(vcf_downsampled)
     PLOT_VCFTOOLS_RELATEDNESS(relatedness)
 
-    // General stats for variants and individuals
-    VCFTOOLS_VCF_STATS(vcf_sampled)
+    VCFTOOLS_VCF_STATS(vcf_downsampled)
     frq = VCFTOOLS_VCF_STATS.out.frq
     idepth = VCFTOOLS_VCF_STATS.out.idepth
     imiss = VCFTOOLS_VCF_STATS.out.imiss
@@ -30,7 +26,7 @@ workflow {
     lqual = VCFTOOLS_VCF_STATS.out.lqual
     lmiss = VCFTOOLS_VCF_STATS.out.lmiss
     het = VCFTOOLS_VCF_STATS.out.het
-    PLOT_VCFTOOLS_VCF_STATS(vcf_sampled, frq, idepth, imiss, ldepth_mean, lqual, lmiss, het)
+    PLOT_VCFTOOLS_VCF_STATS(vcf_downsampled, frq, idepth, imiss, ldepth_mean, lqual, lmiss, het)
 
     publish:
     snp_density = VCFTOOLS_SNP_DENSITY.out
