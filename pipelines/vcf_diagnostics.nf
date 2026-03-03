@@ -1,4 +1,3 @@
-include { PLINK_INIT_BEDFILES; PLINK_PAIRWISE_LD; PARSE_PLINK_LD_DECAY; PLOT_PLINK_LD_DECAY } from "../modules/plink.nf"
 include { BCFTOOLS_INDEX; BCFTOOLS_SAMPLE_VCF } from "../modules/bcftools.nf"
 include { VCFTOOLS_SNP_DENSITY; PLOT_VCFTOOLS_SNP_DENSITY } from "../modules/vcftools.nf"
 include { VCFTOOLS_CALCULATE_RELATEDNESS; PLOT_VCFTOOLS_RELATEDNESS } from "../modules/vcftools.nf"
@@ -8,17 +7,11 @@ nextflow.preview.output = true
 
 workflow {
     main:
-    vcf = file(params.vd_diag_vcf)
+    vcf = file(params.vd_vcf)
     
     // Get full, non-downsampled SNP density
     VCFTOOLS_SNP_DENSITY(vcf, params.vd_snpden_binsize, params.ref_scaffold_name)
     PLOT_VCFTOOLS_SNP_DENSITY(VCFTOOLS_SNP_DENSITY.out)
-
-    // Linkage disequilbrium decay has its own thinning factor in the settings
-    PLINK_INIT_BEDFILES(vcf, params.ref_n_chroms)
-    PLINK_PAIRWISE_LD(PLINK_INIT_BEDFILES.out, params.vd_ld_thin, params.vd_ld_window, params.vd_ld_window_kb)
-    PARSE_PLINK_LD_DECAY(PLINK_PAIRWISE_LD.out, params.ref_scaffold_name, params.vd_ld_bin_size)
-    PLOT_PLINK_LD_DECAY(PARSE_PLINK_LD_DECAY.out, params.vd_ld_window_kb)
 
     // For efficiency the remaining stats are run on a downsampled version of the VCF
     vcf_indexed = BCFTOOLS_INDEX(vcf)
@@ -42,9 +35,6 @@ workflow {
     publish:
     snp_density = VCFTOOLS_SNP_DENSITY.out
     snp_density_plot = PLOT_VCFTOOLS_SNP_DENSITY.out
-    ld_stats = PLINK_PAIRWISE_LD.out
-    ld_decay = PARSE_PLINK_LD_DECAY.out
-    ld_decay_plot = PLOT_PLINK_LD_DECAY.out
     relatedness = relatedness
     relatedness_plot = PLOT_VCFTOOLS_RELATEDNESS.out
     frq = frq
@@ -60,9 +50,6 @@ workflow {
 output {
     snp_density { path "vcf_diagnostics/snp_density" }
     snp_density_plot { path "vcf_diagnostics/snp_density" }
-    ld_stats { path "vcf_diagnostics/ld_decay" }
-    ld_decay { path "vcf_diagnostics/ld_decay" }
-    ld_decay_plot { path "vcf_diagnostics/ld_decay" }
     relatedness { path "vcf_diagnostics/relatedness" }
     relatedness_plot { path "vcf_diagnostics/relatedness" }
     frq { path "vcf_diagnostics/vcf_stats" }

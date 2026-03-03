@@ -7,11 +7,7 @@ ref_n_chroms: 30
 ref_scaffold_name: scaffold
 
 ########## vd: VCF Diagnostics ############
-vd_diag_vcf: 
-vd_ld_thin: 0.1
-vd_ld_bin_size: 1000
-vd_ld_window: 100
-vd_ld_window_kb: 1000
+vd_vcf: 
 vd_snpden_binsize: 100000
 vd_n_sampled_sites: 100000
 
@@ -56,3 +52,10 @@ hs_cand_overlap: 1E4
 hs_cand_min_n_mrk: 3
 hs_cand_min_n_extr_mrk: 3
 hs_cand_min_perc_extr_mrk: 0
+
+######## ld: Linkage Disequilibrium #######
+ld_vcf: 
+ld_thin: 0.5
+ld_window: 100
+ld_window_kb: 1000
+ld_bin_size: 1000
