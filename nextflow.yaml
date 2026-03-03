@@ -1,43 +1,43 @@
-############### Shared ################
+################# Shared ##################
 metadata: 
 ref_genome: /cluster/projects/nn10082k/ref/house_sparrow_genome_assembly-18-11-14_masked.fa
 ref_ploidy: 
 ref_gff: /cluster/projects/nn10082k/ref/house_sparrow.gff
-n_chroms: 30
-scaffold_name: scaffold
+ref_n_chroms: 30
+ref_scaffold_name: scaffold
 
-########## VCF Diagnostics ############
-diag_vcf: 
-ld_thin: 0.1
-ld_bin_size: 1000
-ld_window: 100
-ld_window_kb: 1000
-snpden_binsize: 100000
-n_sampled_sites: 100000
+########## vd: VCF Diagnostics ############
+vd_diag_vcf: 
+vd_ld_thin: 0.1
+vd_ld_bin_size: 1000
+vd_ld_window: 100
+vd_ld_window_kb: 1000
+vd_snpden_binsize: 100000
+vd_n_sampled_sites: 100000
 
-######### Population Structure ########
+######### ps: Population Structure ########
 ps_vcf: 
-exclude_chroms: mtDNA
-filter_mind: 0.2
-filter_geno: 0.2
-filter_maf: 0.01
-prune_window: 50
-prune_step: 10
-prune_threshold: 0.1
-admixture_kmin: 1
-admixture_kmax: 6
-aim_variance_threshold: 0.05
-fst_populations: 
+ps_exclude_chroms: mtDNA
+ps_filter_mind: 0.2
+ps_filter_geno: 0.2
+ps_filter_maf: 0.01
+ps_prune_window: 50
+ps_prune_step: 10
+ps_prune_threshold: 0.1
+ps_admixture_kmin: 1
+ps_admixture_kmax: 6
+ps_aim_variance_threshold: 0.05
+ps_fst_populations: 
 
-######### Consensus Haplotree #########
-cramdir: 
-genome_region: mtDNA
-filt_indelgap: 5
-filt_inclusions: 'QUAL>20 & FMT/DP>5 & FMT/DP<75'
-mafft_iterations: 1000
-iqtree_bootstraps: 1000
+######### ch: Consensus Haplotree #########
+ch_cramdir: 
+ch_genome_region: mtDNA
+ch_filt_indelgap: 5
+ch_filt_inclusions: 'QUAL>20 & FMT/DP>5 & FMT/DP<75'
+ch_mafft_iterations: 1000
+ch_iqtree_bootstraps: 1000
 
-########## Popgen Windows #############
+########## pw: Popgen Windows #############
 pw_vcfdir: 
 pw_sliding_window: 100000
 pw_step_size: 10000
@@ -45,14 +45,14 @@ pw_min_sites: 10
 pw_input_format: phased
 pw_compare_species: true
 
-######### Haplotype Selection #########
+######### hs: Haplotype Selection #########
 hs_vcfdir: 
-is_polarised: false
-populations: 
-ihs_freqbin: 1
-cand_pval: 0.05
-cand_window: 1E5
-cand_overlap: 1E4
-cand_min_n_mrk: 3
-cand_min_n_extr_mrk: 3
-cand_min_perc_extr_mrk: 0
+hs_is_polarised: false
+hs_populations: 
+hs_ihs_freqbin: 1
+hs_cand_pval: 0.05
+hs_cand_window: 1E5
+hs_cand_overlap: 1E4
+hs_cand_min_n_mrk: 3
+hs_cand_min_n_extr_mrk: 3
+hs_cand_min_perc_extr_mrk: 0

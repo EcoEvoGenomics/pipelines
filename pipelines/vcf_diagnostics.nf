@@ -8,21 +8,21 @@ nextflow.preview.output = true
 
 workflow {
     main:
-    vcf = file(params.diag_vcf)
+    vcf = file(params.vd_diag_vcf)
     
     // Get full, non-downsampled SNP density
-    VCFTOOLS_SNP_DENSITY(vcf, params.snpden_binsize, params.scaffold_name)
+    VCFTOOLS_SNP_DENSITY(vcf, params.vd_snpden_binsize, params.ref_scaffold_name)
     PLOT_VCFTOOLS_SNP_DENSITY(VCFTOOLS_SNP_DENSITY.out)
 
     // Linkage disequilbrium decay has its own thinning factor in the settings
-    PLINK_INIT_BEDFILES(vcf, params.n_chroms)
-    PLINK_PAIRWISE_LD(PLINK_INIT_BEDFILES.out, params.ld_thin, params.ld_window, params.ld_window_kb)
-    PARSE_PLINK_LD_DECAY(PLINK_PAIRWISE_LD.out, params.scaffold_name, params.ld_bin_size)
-    PLOT_PLINK_LD_DECAY(PARSE_PLINK_LD_DECAY.out, params.ld_window_kb)
+    PLINK_INIT_BEDFILES(vcf, params.ref_n_chroms)
+    PLINK_PAIRWISE_LD(PLINK_INIT_BEDFILES.out, params.vd_ld_thin, params.vd_ld_window, params.vd_ld_window_kb)
+    PARSE_PLINK_LD_DECAY(PLINK_PAIRWISE_LD.out, params.ref_scaffold_name, params.vd_ld_bin_size)
+    PLOT_PLINK_LD_DECAY(PARSE_PLINK_LD_DECAY.out, params.vd_ld_window_kb)
 
     // For efficiency the remaining stats are run on a downsampled version of the VCF
     vcf_indexed = BCFTOOLS_INDEX(vcf)
-    vcf_sampled = BCFTOOLS_SAMPLE_VCF(vcf_indexed, params.n_sampled_sites)
+    vcf_sampled = BCFTOOLS_SAMPLE_VCF(vcf_indexed, params.vd_n_sampled_sites)
 
     // Relatedness between individuals
     relatedness = VCFTOOLS_CALCULATE_RELATEDNESS(vcf_sampled)

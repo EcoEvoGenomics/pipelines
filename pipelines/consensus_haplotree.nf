@@ -11,21 +11,21 @@ nextflow.preview.output = true
 
 workflow {
     main:
-    crams = Channel.fromPath("${params.cramdir}/**.cram")
-    BCFTOOLS_CALL_REGION_VARIANTS(crams, params.metadata, params.ref_genome, params.ref_ploidy, params.genome_region)
+    crams = Channel.fromPath("${params.ch_cramdir}/**.cram")
+    BCFTOOLS_CALL_REGION_VARIANTS(crams, params.metadata, params.ref_genome, params.ref_ploidy, params.ch_genome_region)
     BCFTOOLS_INDEX(BCFTOOLS_CALL_REGION_VARIANTS.out.vcf)
     BCFTOOLS_NORMALISE(BCFTOOLS_INDEX.out.indexed_vcf, params.ref_genome)
     BCFTOOLS_INDEX_NORMALISED(BCFTOOLS_NORMALISE.out.normalised_vcf)
-    BCFTOOLS_FILTER(BCFTOOLS_INDEX_NORMALISED.out.indexed_vcf, params.filt_indelgap, params.filt_inclusions)
+    BCFTOOLS_FILTER(BCFTOOLS_INDEX_NORMALISED.out.indexed_vcf, params.ch_filt_indelgap, params.ch_filt_inclusions)
     BCFTOOLS_INDEX_FILTERED(BCFTOOLS_FILTER.out.filtered_vcf)
     BCFTOOLS_MAKE_CONSENSUS_FASTA(BCFTOOLS_INDEX_FILTERED.out.indexed_vcf, params.ref_genome)
     SAMTOOLS_INDEX_FASTA(BCFTOOLS_MAKE_CONSENSUS_FASTA.out.fasta)
-    SAMTOOLS_EXTRACT_REGION(SAMTOOLS_INDEX_FASTA.out.indexed_fasta, params.genome_region)
+    SAMTOOLS_EXTRACT_REGION(SAMTOOLS_INDEX_FASTA.out.indexed_fasta, params.ch_genome_region)
     haplotype_fastas = SAMTOOLS_EXTRACT_REGION.out.extracted.collect()
 
-    CONCATENATE_FASTAS(haplotype_fastas, "${params.genome_region}.fasta")
-    MAFFT_ALIGN(CONCATENATE_FASTAS.out.concat, params.mafft_iterations)
-    IQTREE_BUILD_TREE(MAFFT_ALIGN.out.aligned, params.iqtree_bootstraps)
+    CONCATENATE_FASTAS(haplotype_fastas, "${params.ch_genome_region}.fasta")
+    MAFFT_ALIGN(CONCATENATE_FASTAS.out.concat, params.ch_mafft_iterations)
+    IQTREE_BUILD_TREE(MAFFT_ALIGN.out.aligned, params.ch_iqtree_bootstraps)
     IQTREE_TO_PLAIN_NEWICK(IQTREE_BUILD_TREE.out.contree)
 
     METADATA_TO_SPART(params.metadata)

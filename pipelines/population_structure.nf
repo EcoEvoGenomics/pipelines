@@ -11,22 +11,22 @@ nextflow.preview.output = true
 workflow {
     main:
     vcf = file(params.ps_vcf)
-    pops = Channel.from(params.fst_populations)
+    pops = Channel.from(params.ps_fst_populations)
 
     // PCA, MISSINGNESS
-    PLINK_INIT_BEDFILES(vcf, params.n_chroms)
-    PLINK_EXCLUDE_CHROMS(PLINK_INIT_BEDFILES.out, params.exclude_chroms)
-    PLINK_FILTER(PLINK_EXCLUDE_CHROMS.out, params.filter_mind, params.filter_geno, params.filter_maf)
-    PLINK_LD_PRUNE(PLINK_FILTER.out, params.prune_window, params.prune_step, params.prune_threshold)
+    PLINK_INIT_BEDFILES(vcf, params.ref_n_chroms)
+    PLINK_EXCLUDE_CHROMS(PLINK_INIT_BEDFILES.out, params.ps_exclude_chroms)
+    PLINK_FILTER(PLINK_EXCLUDE_CHROMS.out, params.ps_filter_mind, params.ps_filter_geno, params.ps_filter_maf)
+    PLINK_LD_PRUNE(PLINK_FILTER.out, params.ps_prune_window, params.ps_prune_step, params.ps_prune_threshold)
     PLINK_EXTRACT_PRUNED(PLINK_FILTER.out, PLINK_LD_PRUNE.out.prune_in)
-    plinkpruned = PLINK_REFILTER(PLINK_EXTRACT_PRUNED.out, params.filter_mind, params.filter_geno, params.filter_maf)
+    plinkpruned = PLINK_REFILTER(PLINK_EXTRACT_PRUNED.out, params.ps_filter_mind, params.ps_filter_geno, params.ps_filter_maf)
     PLINK_MISSINGNESS(plinkpruned)
     PLINK_PCA(plinkpruned)
 
     // ADMIXTURE, AIMs
-    k_values = Channel.of(params.admixture_kmin..params.admixture_kmax)
+    k_values = Channel.of(params.ps_admixture_kmin..params.ps_admixture_kmax)
     ADMIXTURE(plinkpruned, k_values)
-    ADMIXTURE_AIMS(ADMIXTURE.out.pfile, PLINK_LD_PRUNE.out.prune_in, params.aim_variance_threshold)
+    ADMIXTURE_AIMS(ADMIXTURE.out.pfile, PLINK_LD_PRUNE.out.prune_in, params.ps_aim_variance_threshold)
     plinkaims = PLINK_EXTRACT_AIMS(plinkpruned, ADMIXTURE_AIMS.out.flatten())
     PLINK_TO_VCF(plinkaims)
 
