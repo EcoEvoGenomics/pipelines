@@ -94,8 +94,8 @@ process METADATA_TO_SPART {
     echo -n "Individual_assignment =" >> ${metadata.simpleName}.spart
     while read -r metadata_line; do
         sample=\$(echo \$metadata_line | awk -F, '{print \$1}')
-        spp=\$(cat ${metadata} | grep -e "\${sample}" | awk -F, '{print \$2}')
-        pop=\$(cat ${metadata} | grep -e "\${sample}" | awk -F, '{print \$3}')
+        spp=\$(cat ${metadata} | grep -e "\${sample}," | awk -F, '{print \$2}')
+        pop=\$(cat ${metadata} | grep -e "\${sample}," | awk -F, '{print \$3}')
         spp_idx=\$(cat spp_lookup.csv.tmp | grep -e \${spp} | awk -F, '{print \$1}')
         pop_idx=\$(cat pop_lookup.csv.tmp | grep -e \${pop} | awk -F, '{print \$1}')
         echo -n "\n\${sample}: \${spp_idx} / \${pop_idx}" >> ${metadata.simpleName}.spart
