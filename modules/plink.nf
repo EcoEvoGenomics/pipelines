@@ -288,21 +288,34 @@ process PARSE_PLINK_LD_DECAY {
 
 process PLOT_PLINK_LD_DECAY {
 
-    label "RBASE"
+    label "RPLOT"
 
     input:
     path(ld_decay_bins)
     val(ld_window_kb)
 
     output:
-    path("${ld_decay_bins}.pdf")
+    path("${ld_decay_bins}.png")
 
     script:
     """
     #!/usr/bin/env Rscript
+    library(ggplot2)
     tbl <- read.table("${ld_decay_bins.toString()}", header = TRUE)
-    pdf("${ld_decay_bins}.pdf")
-    plot(data = tbl, AVG_R2 ~ DIST, col = rgb(0, 0, 0, 0.05), pch = 20, main = "LD DECAY")
+    ordered_chrs <- unique(tbl\$CHR)
+    tbl\$CHR <- factor(tbl\$CHR, levels = ordered_chrs)
+    chr_count <- length(unique(tbl\$CHR))
+    png("${ld_decay_bins}.png", height = chr_count / 2, width = chr_count / 2, units = "in", res = 600)
+    tbl |>
+        ggplot(aes(x = DIST, y = AVG_R2)) +
+        geom_point(alpha = 0.1, stroke = NA) +
+        facet_wrap(vars(CHR)) +
+        scale_y_continuous(name = bquote("Linkage diseqiulibrium, mean" ~ R^2), n.breaks = 3, limits = c(0, 1), expand = FALSE) +
+        scale_x_continuous(name = "Distance (bp)", n.breaks = 3) +
+        theme_bw() +
+        theme(
+            panel.spacing = unit(10, "mm")
+        )
     dev.off()
     """
 }
