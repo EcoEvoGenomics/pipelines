@@ -25,7 +25,7 @@ process BCFTOOLS_CALL_REGION_VARIANTS {
     # MAKE SAMPLES FILE TO MATCH PLOIDY FILE IN BCFTOOLS CALL
     bcftools query --list-samples ${cram.simpleName}_tmp.bcf > samples.txt
     while read -r sample; do
-        echo "^\$sample" >> samples_greps.txt
+        echo "^\${sample}," >> samples_greps.txt
     done < "samples.txt"
     grep -f samples_greps.txt ${metadata} | awk -F, '{print \$1, \$4}' > call.samples
 
