@@ -33,6 +33,7 @@ process VCFTOOLS_VCF_STATS {
     path("${vcf.simpleName}.lqual"), emit: lqual
     path("${vcf.simpleName}.lmiss"), emit: lmiss
     path("${vcf.simpleName}.het"), emit: het
+    path("${vcf.simpleName}.hwe"), emit: hwe
 
     script:
     """
@@ -43,6 +44,7 @@ process VCFTOOLS_VCF_STATS {
     vcftools --gzvcf ${vcf} --site-quality --out ${vcf.simpleName}
     vcftools --gzvcf ${vcf} --missing-site --out ${vcf.simpleName}
     vcftools --gzvcf ${vcf} --het --out ${vcf.simpleName}
+    vcftools --gzvcf ${vcf} --hardy --out ${vcf.simpleName}
     """
 }
 
@@ -175,6 +177,7 @@ process PLOT_VCFTOOLS_VCF_STATS {
     path(lqual)
     path(lmiss)
     path(het)
+    path(hwe)
 
     output:
     path("${vcf.simpleName}.stats.pdf")
@@ -203,6 +206,7 @@ process PLOT_VCFTOOLS_VCF_STATS {
     lqual <- read.table("${lqual.toString()}", header = TRUE)
     lmiss <- read.table("${lmiss.toString()}", header = TRUE)
     het <- read.table("${het.toString()}", header = TRUE)
+    hwe <- read.table("${hwe.toString()}", header = TRUE)
 
     pdf("${vcf.simpleName}.stats.pdf", width = 20, height = 20)
     par(mfrow = c(3, 3))
@@ -214,6 +218,7 @@ process PLOT_VCFTOOLS_VCF_STATS {
     hist(lmiss\$F_MISS, main = "SITE MISSINGNESS")
     hist(frq\$MAF, main = "SITE MINOR ALLELE FREQUENCY")
     hist(frq\$MAC, main = "SITE MINOR ALLELE COUNT", breaks = seq(min(frq\$MAC), max(frq\$MAC), length.out = max(frq\$MAC)))
+    hist(-log10(hwe\$P_HWE), main = "SITE HARDY-WEINBERG TEST (-LOG10 P-VALUE)")
     dev.off()
     """
 }

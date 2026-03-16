@@ -26,7 +26,8 @@ workflow {
     lqual = VCFTOOLS_VCF_STATS.out.lqual
     lmiss = VCFTOOLS_VCF_STATS.out.lmiss
     het = VCFTOOLS_VCF_STATS.out.het
-    PLOT_VCFTOOLS_VCF_STATS(vcf_downsampled, frq, idepth, imiss, ldepth_mean, lqual, lmiss, het)
+    hwe = VCFTOOLS_VCF_STATS.out.hwe
+    PLOT_VCFTOOLS_VCF_STATS(vcf_downsampled, frq, idepth, imiss, ldepth_mean, lqual, lmiss, het, hwe)
 
     publish:
     snp_density = VCFTOOLS_SNP_DENSITY.out
@@ -40,6 +41,7 @@ workflow {
     lqual = lqual
     lmiss = lmiss
     het = het
+    hwe = hwe
     vcf_stats_plot = PLOT_VCFTOOLS_VCF_STATS.out
 }
 
@@ -55,5 +57,6 @@ output {
     lqual { path "vcf_diagnostics/vcf_stats" }
     lmiss { path "vcf_diagnostics/vcf_stats" }
     het { path "vcf_diagnostics/vcf_stats" }
+    hwe { path "vcf_diagnostics/vcf_stats" }
     vcf_stats_plot { path "vcf_diagnostics/vcf_stats" }
 }
