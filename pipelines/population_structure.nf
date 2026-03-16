@@ -15,7 +15,7 @@ workflow {
     // PCA, MISSINGNESS
     PLINK_INIT_BEDFILES(vcf, params.ref_n_chroms)
     PLINK_EXCLUDE_CHROMS(PLINK_INIT_BEDFILES.out, params.ps_exclude_chroms)
-    PLINK_LD_PRUNE(PLINK_EXCLUDE_CHROMS.out, params.ps_prune_window, params.ps_prune_step, params.ps_prune_threshold)
+    PLINK_LD_PRUNE(PLINK_EXCLUDE_CHROMS.out, params.ps_prune_window_kb, params.ps_prune_step_snps, params.ps_prune_threshold)
     plinkpruned = PLINK_EXTRACT_PRUNED(PLINK_EXCLUDE_CHROMS.out, PLINK_LD_PRUNE.out.prune_in)
     PLINK_MISSINGNESS(plinkpruned)
     PLINK_PCA(plinkpruned)

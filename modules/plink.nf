@@ -64,7 +64,7 @@ process PLINK_LD_PRUNE {
     plink \
     --bfile ${bed.simpleName} \
     --allow-extra-chr --chr-set ${n_chroms} \
-    --indep-pairwise ${window_size} ${step_size} ${r2_threshold} \
+    --indep-pairwise ${window_size}'kb' ${step_size} ${r2_threshold} \
     --make-bed --out ${bed.simpleName}
     mv ${bed.simpleName}.prune.in prune.in
     mv ${bed.simpleName}.prune.out prune.out   
