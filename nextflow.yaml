@@ -14,9 +14,6 @@ vd_n_sampled_sites: 100000
 ######### ps: Population Structure ########
 ps_vcf: 
 ps_exclude_chroms: mtDNA
-ps_filter_mind: 0.2
-ps_filter_geno: 0.2
-ps_filter_maf: 0.01
 ps_prune_window: 50
 ps_prune_step: 10
 ps_prune_threshold: 0.1

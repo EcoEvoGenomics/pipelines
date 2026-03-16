@@ -1,6 +1,5 @@
 include { PLINK_INIT_BEDFILES; PLINK_EXCLUDE_CHROMS; PLINK_LD_PRUNE; PLINK_PCA; PLINK_MISSINGNESS; PLINK_TO_VCF } from "../modules/plink.nf"
 include { PLINK_EXTRACT_SITES as PLINK_EXTRACT_PRUNED; PLINK_EXTRACT_SITES as PLINK_EXTRACT_AIMS } from "../modules/plink.nf"
-include { PLINK_FILTER; PLINK_FILTER as PLINK_REFILTER } from "../modules/plink.nf"
 include { ADMIXTURE; ADMIXTURE_AIMS } from "../modules/admixture.nf"
 include { WRITE_POPULATION_CENSUS_LIST } from "../modules/system.nf"
 include { BCFTOOLS_PICK_SAMPLES } from "../modules/bcftools.nf"
@@ -16,10 +15,8 @@ workflow {
     // PCA, MISSINGNESS
     PLINK_INIT_BEDFILES(vcf, params.ref_n_chroms)
     PLINK_EXCLUDE_CHROMS(PLINK_INIT_BEDFILES.out, params.ps_exclude_chroms)
-    PLINK_FILTER(PLINK_EXCLUDE_CHROMS.out, params.ps_filter_mind, params.ps_filter_geno, params.ps_filter_maf)
-    PLINK_LD_PRUNE(PLINK_FILTER.out, params.ps_prune_window, params.ps_prune_step, params.ps_prune_threshold)
-    PLINK_EXTRACT_PRUNED(PLINK_FILTER.out, PLINK_LD_PRUNE.out.prune_in)
-    plinkpruned = PLINK_REFILTER(PLINK_EXTRACT_PRUNED.out, params.ps_filter_mind, params.ps_filter_geno, params.ps_filter_maf)
+    PLINK_LD_PRUNE(PLINK_EXCLUDE_CHROMS.out, params.ps_prune_window, params.ps_prune_step, params.ps_prune_threshold)
+    plinkpruned = PLINK_EXTRACT_PRUNED(PLINK_EXCLUDE_CHROMS.out, PLINK_LD_PRUNE.out.prune_in)
     PLINK_MISSINGNESS(plinkpruned)
     PLINK_PCA(plinkpruned)
 
