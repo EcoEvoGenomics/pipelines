@@ -25,7 +25,7 @@ process BCFTOOLS_CALL_REGION_VARIANTS {
     # MAKE SAMPLES FILE TO MATCH PLOIDY FILE IN BCFTOOLS CALL
     bcftools query --list-samples ${cram.simpleName}_tmp.bcf > samples.txt
     while read -r sample; do
-        echo "^\$sample" >> samples_greps.txt
+        echo "^\${sample}," >> samples_greps.txt
     done < "samples.txt"
     grep -f samples_greps.txt ${metadata} | awk -F, '{print \$1, \$4}' > call.samples
 
@@ -78,35 +78,14 @@ process BCFTOOLS_NORMALISE {
     """
 }
 
-process BCFTOOLS_FILTER {
+process BCFTOOLS_MAKE_CONSENSUS_FASTA {
 
-    label "BCFTOOLS"
+    label "BCFTOOLS_VCFTOOLS"
 
     input:
     tuple path(vcf), path(csi)
     val(indelgap)
     val(inclusions)
-
-    output:
-    path("${vcf.simpleName}_filt.vcf.gz"), emit: filtered_vcf
-
-    script:
-    """
-    bcftools filter \
-        --threads ${task.cpus} \
-        --IndelGap ${indelgap} \
-        --include "${inclusions}" \
-        --output-type z --output ${vcf.simpleName}_filt.vcf.gz \
-        ${vcf}
-    """
-}
-
-process BCFTOOLS_MAKE_CONSENSUS_FASTA {
-
-    label "BCFTOOLS"
-
-    input:
-    tuple path(vcf), path(csi)
     path(ref_genome)
 
     output:
@@ -114,9 +93,26 @@ process BCFTOOLS_MAKE_CONSENSUS_FASTA {
 
     script:
     """
-    samples=\$(bcftools query --list-samples ${vcf})
+    # REMOVE LOW-QUALITY AND LOW COVERAGE SITES
+    bcftools filter \
+        --threads ${task.cpus} \
+        --IndelGap ${indelgap} \
+        --include "${inclusions}" \
+        --output-type z --output ${vcf.simpleName}_filt.vcf.gz \
+        ${vcf}
+    bcftools index --threads ${task.cpus} ${vcf.simpleName}_filt.vcf.gz
+    
+    # MAKE A MASK FOR LOW-QUALIY SITES
+    vcftools --gzvcf ${vcf} --gzdiff ${vcf.simpleName}_filt.vcf.gz --diff-site
+    cat out.diff.sites_in_files | tail -n +2 | awk '\$4==1 {print \$1, \$2}' > site_mask.tsv
+
+    # CALL CONSENSUS, MASK LOW-QUALITY SITES AS 'N' INSTEAD OF REF ALLELE
+    samples=\$(bcftools query --list-samples ${vcf.simpleName}_filt.vcf.gz)
     cat ${ref_genome} \
-    | bcftools consensus --samples \$samples ${vcf} \
+    | bcftools consensus \
+        --samples \$samples \
+        -m site_mask.tsv \
+        ${vcf.simpleName}_filt.vcf.gz \
     | bgzip -c > ${vcf.simpleName}.fasta.gz
     """
 }

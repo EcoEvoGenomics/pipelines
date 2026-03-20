@@ -1,5 +1,5 @@
-include { BCFTOOLS_CALL_REGION_VARIANTS; BCFTOOLS_NORMALISE; BCFTOOLS_FILTER } from "../modules/bcftools.nf"
-include { BCFTOOLS_INDEX; BCFTOOLS_INDEX as BCFTOOLS_INDEX_NORMALISED; BCFTOOLS_INDEX as BCFTOOLS_INDEX_FILTERED } from "../modules/bcftools.nf"
+include { BCFTOOLS_CALL_REGION_VARIANTS; BCFTOOLS_NORMALISE } from "../modules/bcftools.nf"
+include { BCFTOOLS_INDEX; BCFTOOLS_INDEX as BCFTOOLS_INDEX_NORMALISED} from "../modules/bcftools.nf"
 include { BCFTOOLS_MAKE_CONSENSUS_FASTA } from "../modules/bcftools.nf"
 include { SAMTOOLS_EXTRACT_REGION; SAMTOOLS_INDEX_FASTA } from "../modules/samtools.nf"
 include { CONCATENATE_FILES as CONCATENATE_FASTAS } from "../modules/system.nf"
@@ -16,9 +16,7 @@ workflow {
     BCFTOOLS_INDEX(BCFTOOLS_CALL_REGION_VARIANTS.out.vcf)
     BCFTOOLS_NORMALISE(BCFTOOLS_INDEX.out.indexed_vcf, params.ref_genome)
     BCFTOOLS_INDEX_NORMALISED(BCFTOOLS_NORMALISE.out.normalised_vcf)
-    BCFTOOLS_FILTER(BCFTOOLS_INDEX_NORMALISED.out.indexed_vcf, params.ch_filt_indelgap, params.ch_filt_inclusions)
-    BCFTOOLS_INDEX_FILTERED(BCFTOOLS_FILTER.out.filtered_vcf)
-    BCFTOOLS_MAKE_CONSENSUS_FASTA(BCFTOOLS_INDEX_FILTERED.out.indexed_vcf, params.ref_genome)
+    BCFTOOLS_MAKE_CONSENSUS_FASTA(BCFTOOLS_INDEX_NORMALISED.out.indexed_vcf, params.ch_filt_indelgap, params.ch_filt_inclusions, params.ref_genome)
     SAMTOOLS_INDEX_FASTA(BCFTOOLS_MAKE_CONSENSUS_FASTA.out.fasta)
     SAMTOOLS_EXTRACT_REGION(SAMTOOLS_INDEX_FASTA.out.indexed_fasta, params.ch_genome_region)
     haplotype_fastas = SAMTOOLS_EXTRACT_REGION.out.extracted.collect()
