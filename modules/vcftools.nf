@@ -198,8 +198,8 @@ process PLOT_VCFTOOLS_VCF_STATS {
 
     frq <- read.table(frq, skip = skip_header_line, header = FALSE, fill = TRUE, col.names = col_names, na.strings = c("", "NA"), stringsAsFactors = FALSE)
     
-    frq\$MAF <- frq[grep("^A", names(frq), value = TRUE)] |> apply(1, \\(x) min(x))
-    frq\$MAC <- frq\$MAF * frq\$N_CHR |> round() |> as.integer()
+    frq\$MAF <- (frq[grep("^A", names(frq), value = TRUE)] |> apply(1, \\(x) min(x)))
+    frq\$MAC <- round(frq\$MAF * frq\$N_CHR)
     idepth <- read.table("${idepth.toString()}", header = TRUE)
     imiss <- read.table("${imiss.toString()}", header = TRUE)
     ldepth_mean <- read.table("${ldepth_mean.toString()}", header = TRUE)
@@ -217,7 +217,7 @@ process PLOT_VCFTOOLS_VCF_STATS {
     hist(lqual\$QUAL[lqual\$QUAL <= quantile(lqual\$QUAL, 0.99)], main = "SITE QUALITY (Cutoff at 99th percentile)")
     hist(lmiss\$F_MISS, main = "SITE MISSINGNESS")
     hist(frq\$MAF, main = "SITE MINOR ALLELE FREQUENCY")
-    hist(frq\$MAC, main = "SITE MINOR ALLELE COUNT", breaks = seq(min(frq\$MAC), max(frq\$MAC), length.out = max(frq\$MAC)))
+    hist(frq\$MAC, main = "SITE MINOR ALLELE COUNT", breaks = seq(min(frq\$MAC, na.rm = TRUE), max(frq\$MAC, na.rm = TRUE), length.out = max(frq\$MAC, na.rm = TRUE)))
     hist(-log10(hwe\$P_HWE), main = "SITE HARDY-WEINBERG TEST (-LOG10 P-VALUE)")
     dev.off()
     """
