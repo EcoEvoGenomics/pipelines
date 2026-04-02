@@ -200,16 +200,16 @@ process REHH_PARSE_PLOT_SCAN {
     path(gff)
     val(cand_pval)
     val(width_mm)
+    val(cand_mm)
     val(height_mm)
 
     output:
     path("*.png"), emit: mainplot
     path("**/*.png"), emit: candplots
-    path("**/*.tsv"), emit: candgenes
+    path("**/*.gff"), emit: candgenes
 
     script:
     """
-    Rscript ${parsescript} ${scans} ${cands} ${gff} ${cand_pval} ${width_mm} ${height_mm}
-    rm Rplots.pdf
+    Rscript ${parsescript} ${scans} ${cands} ${gff} ${cand_pval} ${width_mm} ${cand_mm} ${height_mm}
     """
 }

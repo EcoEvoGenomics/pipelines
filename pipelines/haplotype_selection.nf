@@ -65,8 +65,9 @@ workflow {
         xpehh_candfile_list,
         params.ref_gff,
         params.hs_cand_pval,
-        170,
-        25
+        120,
+        50,
+        20
     )
 
     publish:
