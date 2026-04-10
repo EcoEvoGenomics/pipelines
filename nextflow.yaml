@@ -50,6 +50,9 @@ hs_cand_overlap: 1E4
 hs_cand_min_n_mrk: 3
 hs_cand_min_n_extr_mrk: 3
 hs_cand_min_perc_extr_mrk: 0
+hs_plot_main_width_mm: 120
+hs_plot_cand_width_mm: 120
+hs_plot_height_mm: 30
 
 ######## ld: Linkage Disequilibrium #######
 ld_vcf: 

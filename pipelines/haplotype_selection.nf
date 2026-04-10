@@ -66,9 +66,9 @@ workflow {
         params.ref_gff,
         params.ref_chrom_renames_tsv,
         params.hs_cand_pval,
-        120,
-        50,
-        20
+        params.hs_plot_main_width_mm,
+        params.hs_plot_cand_width_mm,
+        params.hs_plot_height_mm
     )
 
     publish:
