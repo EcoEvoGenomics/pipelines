@@ -64,6 +64,7 @@ workflow {
         xpehh_resultfile_list,
         xpehh_candfile_list,
         params.ref_gff,
+        params.ref_chrom_renames_tsv,
         params.hs_cand_pval,
         120,
         50,

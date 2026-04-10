@@ -198,6 +198,7 @@ process REHH_PARSE_PLOT_SCAN {
     path(scans)
     path(cands)
     path(gff)
+    path(chrom_renames)
     val(cand_pval)
     val(width_mm)
     val(cand_mm)
@@ -210,6 +211,6 @@ process REHH_PARSE_PLOT_SCAN {
 
     script:
     """
-    Rscript ${parsescript} ${scans} ${cands} ${gff} ${cand_pval} ${width_mm} ${cand_mm} ${height_mm}
+    Rscript ${parsescript} ${scans} ${cands} ${gff} ${chrom_renames} ${cand_pval} ${width_mm} ${cand_mm} ${height_mm}
     """
 }

@@ -5,6 +5,7 @@ ref_ploidy:
 ref_gff: /cluster/projects/nn10082k/ref/house_sparrow.gff
 ref_n_chroms: 30
 ref_scaffold_name: scaffold
+ref_chr_renames_tsv: 
 
 ########## vd: VCF Diagnostics ############
 vd_vcf: 

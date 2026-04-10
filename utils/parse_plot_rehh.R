@@ -1,13 +1,15 @@
 suppressMessages(library(tidyverse))
+suppressMessages(library(forcats))
 suppressMessages(library(gtools))
 
 # -------- Parse command line arguments ----------------------------------------
 args <- commandArgs(trailing = TRUE)
-if (length(args) != 7) {
+if (length(args) != 8) {
   stop("USAGE: Rscript plot_xpehh.R
   <path to list of xpehh/ihs.csv file paths>
   <path to list of xpehh/ihs.cand.csv file paths>
   <path to annotations .gff>
+  <path to chromosome name conversion .tsv>
   <base p-value used to call candidate regions (e.g. 0.01)>
   <main plot width in mm>
   <candidate region plots width in mm>
@@ -17,14 +19,19 @@ if (length(args) != 7) {
 input_scans <- args[1]
 input_cands <- args[2]
 input_gff <- args[3]
-base_pval <- as.double(args[4])
-width_mm <- as.integer(args[5])
-cand_mm <- as.integer(args[6])
-height_mm <- as.integer(args[7])
+chr_conversion_table <- args[4]
+base_pval <- as.double(args[5])
+width_mm <- as.integer(args[6])
+cand_mm <- as.integer(args[7])
+height_mm <- as.integer(args[8])
 
 n_scans <- length(readLines(input_scans))
 n_cands <- length(readLines(input_cands))
 stopifnot(n_cands == n_scans)
+
+# -------- Parse chromosomes rename tsv ----------------------------------------
+renamed_chrs <- read.table(chr_conversion_table)$V1
+names(renamed_chrs) <- read.table(chr_conversion_table)$V2
 
 # -------- Parse input xp-EHH and IHS .CSV files -------------------------------
 print("Parsing input files ...")
@@ -72,14 +79,15 @@ for (cand_index in seq_len(n_cands)) {
 
 }
 
-format_scans_cands <- function(scans_or_cands) {
-  scans_or_cands |>
+format_scans_cands <- function(scans_or_cands, renamed_chrs) {
+  scans_or_cands <- scans_or_cands |>
     mutate(SCAN = factor(SCAN, levels = unique(SCAN))) |>
-    mutate(CHR = factor(CHR, levels = gtools::mixedsort(unique(CHR))))
+    mutate(CHR = factor(CHR, levels = gtools::mixedsort(unique(CHR)))) |>
+    mutate(across(CHR, \(x) fct_recode(x, !!!renamed_chrs)))
 }
 
-parsed_scans <- format_scans_cands(parsed_scans)
-parsed_cands <- format_scans_cands(parsed_cands)
+parsed_scans <- format_scans_cands(parsed_scans, renamed_chrs)
+parsed_cands <- format_scans_cands(parsed_cands, renamed_chrs)
 
 print("Input files parsed")
 
@@ -96,7 +104,9 @@ annots <- input_gff |>
       "ATTRIBUTE"
     )
   ) |>
-  filter(FEATURE == "gene")
+  filter(FEATURE == "gene") |>
+  mutate(CHR = factor(CHR)) |>
+  mutate(across(CHR, \(x) fct_recode(x, !!!renamed_chrs)))
 
 print("GFF parsed")
 
