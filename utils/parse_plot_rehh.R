@@ -1,13 +1,15 @@
 suppressMessages(library(tidyverse))
+suppressMessages(library(forcats))
 suppressMessages(library(gtools))
 
 # -------- Parse command line arguments ----------------------------------------
 args <- commandArgs(trailing = TRUE)
-if (length(args) != 7) {
+if (length(args) != 8) {
   stop("USAGE: Rscript plot_xpehh.R
   <path to list of xpehh/ihs.csv file paths>
   <path to list of xpehh/ihs.cand.csv file paths>
   <path to annotations .gff>
+  <path to chromosome name conversion .tsv>
   <base p-value used to call candidate regions (e.g. 0.01)>
   <main plot width in mm>
   <candidate region plots width in mm>
@@ -17,14 +19,19 @@ if (length(args) != 7) {
 input_scans <- args[1]
 input_cands <- args[2]
 input_gff <- args[3]
-base_pval <- as.double(args[4])
-width_mm <- as.integer(args[5])
-cand_mm <- as.integer(args[6])
-height_mm <- as.integer(args[7])
+chr_conversion_table <- args[4]
+base_pval <- as.double(args[5])
+width_mm <- as.integer(args[6])
+cand_mm <- as.integer(args[7])
+height_mm <- as.integer(args[8])
 
 n_scans <- length(readLines(input_scans))
 n_cands <- length(readLines(input_cands))
 stopifnot(n_cands == n_scans)
+
+# -------- Parse chromosomes rename tsv ----------------------------------------
+renamed_chrs <- read.table(chr_conversion_table)$V1
+names(renamed_chrs) <- read.table(chr_conversion_table)$V2
 
 # -------- Parse input xp-EHH and IHS .CSV files -------------------------------
 print("Parsing input files ...")
@@ -72,14 +79,15 @@ for (cand_index in seq_len(n_cands)) {
 
 }
 
-format_scans_cands <- function(scans_or_cands) {
-  scans_or_cands |>
+format_scans_cands <- function(scans_or_cands, renamed_chrs) {
+  scans_or_cands <- scans_or_cands |>
     mutate(SCAN = factor(SCAN, levels = unique(SCAN))) |>
-    mutate(CHR = factor(CHR, levels = gtools::mixedsort(unique(CHR))))
+    mutate(CHR = factor(CHR, levels = gtools::mixedsort(unique(CHR)))) |>
+    mutate(across(CHR, \(x) fct_recode(x, !!!renamed_chrs)))
 }
 
-parsed_scans <- format_scans_cands(parsed_scans)
-parsed_cands <- format_scans_cands(parsed_cands)
+parsed_scans <- format_scans_cands(parsed_scans, renamed_chrs)
+parsed_cands <- format_scans_cands(parsed_cands, renamed_chrs)
 
 print("Input files parsed")
 
@@ -96,11 +104,14 @@ annots <- input_gff |>
       "ATTRIBUTE"
     )
   ) |>
-  filter(FEATURE == "gene")
+  filter(FEATURE == "gene") |>
+  mutate(CHR = factor(CHR)) |>
+  mutate(across(CHR, \(x) fct_recode(x, !!!renamed_chrs)))
 
 print("GFF parsed")
 
 # -------- Plotting constants --------------------------------------------------
+textsize <- 6
 constant_y_max <- max(parsed_scans$LOGPVALUE)
 constant_y_min <- -(constant_y_max / 6)
 y_gap <- constant_y_min / 3
@@ -116,7 +127,7 @@ chr_labels <- chr_names
 for (chr_index in seq_along(chr_labels)) {
   chr <- chr_labels[chr_index]
   chr_size <- max(parsed_scans$POSITION[parsed_scans$CHR == chr])
-  if (nchar(chr) > (((chr_size / 1e9) * width_mm / 1.25))) {
+  if (nchar(chr) > (((chr_size / 1e9) * width_mm / 1.75))) {
     chr_labels[chr_index] <- ""
   }
 }
@@ -124,31 +135,17 @@ names(chr_labels) <- chr_names
 facet_labels <- c(chr_labels, scan_labels)
 
 axislabels_common <- list(
-  ylab(expression(italic("-log")[10] ~ "P"))
+  ylab(expression(bold(bolditalic("-log")[10] ~ "P")))
 )
 
 scales_common <- list(
   scale_alpha_manual(values = c(0, 1)),
-  scale_colour_manual(values = c("black", "grey60")),
-  scale_y_continuous(
-    guide = guide_axis(cap = TRUE),
-    breaks = seq(
-      from = 0,
-      to = ceiling(constant_y_max),
-      length.out = ceiling(height_mm / 7.5)
-    ),
-    labels = seq(
-      from = 0,
-      to = ceiling(constant_y_max),
-      length.out = ceiling(height_mm / 7.5)
-    ) |> round(digits = 0),
-    limits = c(constant_y_min, ceiling(constant_y_max))
-  )
+  scale_colour_manual(values = c("black", "grey60"))
 )
 
 theme_common <- theme(
   axis.line = element_line(colour = "black", linewidth = 0.1),
-  axis.text = element_text(colour = "black", size = 4),
+  axis.text = element_text(colour = "black", size = textsize),
   axis.ticks.length = unit(0.5, "mm"),
   axis.ticks = element_line(colour = "black", linewidth = 0.1),
   axis.title.y = element_text(
@@ -156,8 +153,8 @@ theme_common <- theme(
     hjust = 0,
     vjust = 1,
     colour = "black",
-    size = 4,
-    face = "plain"
+    size = textsize,
+    face = "bold"
   ),
   panel.background = element_blank(),
   panel.grid = element_blank(),
@@ -167,7 +164,7 @@ theme_common <- theme(
   strip.clip = "off",
   strip.text.x = element_text(
     colour = "black",
-    size = 4,
+    size = textsize,
     margin = margin(0, 0, 0, 0, unit = "mm")
   ),
   strip.text.y.left = element_text(
@@ -175,8 +172,12 @@ theme_common <- theme(
     colour = "black",
     hjust = 0,
     vjust = 1,
-    margin = margin(l = 0.75, r = -max(nchar(scan_labels)) / 1.5, unit = "mm"),
-    size = 4
+    margin = margin(
+      l = 0.75,
+      r = -max(nchar(scan_labels)) / (6 / textsize),
+      unit = "mm"
+    ),
+    size = textsize
   )
 )
 
@@ -214,6 +215,20 @@ manhattan <- ggplot(parsed_scans, aes(x = POSITION, y = LOGPVALUE)) +
     fill = "red"
   ) +
   scale_x_continuous(expand = expansion(add = 0)) +
+  scale_y_continuous(
+    guide = guide_axis(cap = TRUE),
+    breaks = seq(
+      from = 0,
+      to = ceiling(constant_y_max),
+      length.out = ceiling(height_mm / 7.5)
+    ),
+    labels = seq(
+      from = 0,
+      to = ceiling(constant_y_max),
+      length.out = ceiling(height_mm / 7.5)
+    ) |> round(digits = 0),
+    limits = c(constant_y_min, ceiling(constant_y_max))
+  ) +
   axislabels_common +
   scales_common +
   theme_common +
@@ -291,6 +306,9 @@ for (cand_index in seq_len(nrow(parsed_cands))) {
     }
   }
 
+  region_ymax <- ceiling(max(region_scans$LOGPVALUE))
+  region_yratio <- region_ymax / constant_y_max
+
   candhattan <- ggplot(region_scans, aes(x = POSITION, y = LOGPVALUE)) +
     coord_cartesian(clip = "off") +
     facet_grid(
@@ -321,20 +339,21 @@ for (cand_index in seq_len(nrow(parsed_cands))) {
       aes(
         x = START,
         xend = END,
-        y = constant_y_min - ((constant_y_min - y_gap) / 2),
-        yend = constant_y_min - ((constant_y_min - y_gap) / 2)
+        y = (constant_y_min - ((constant_y_min - y_gap)) / 2) * region_yratio,
+        yend = (constant_y_min - ((constant_y_min - y_gap)) / 2) * region_yratio
       ),
       arrow = arrow(
-        angle = 20,
-        length = unit(0.5, "mm"),
+        angle = 30,
+        length = unit(1, "mm"),
         type = "closed"
       ),
       position = position_jitter(
         width = 0,
-        height = abs((constant_y_min - y_gap) / 3)
+        height = abs((constant_y_min - y_gap) / 3) * region_yratio
       ),
       colour = "blue",
-      linewidth = 0.25,
+      linewidth = 0.4,
+      lineend = "square",
       inherit.aes = FALSE
     ) +
     xlab(chr) +
@@ -347,11 +366,33 @@ for (cand_index in seq_len(nrow(parsed_cands))) {
       expand = expansion(mult = c(0.01, 0.05)),
       guide = guide_axis(cap = "both")
     ) +
+    scale_y_continuous(
+      guide = guide_axis(cap = TRUE),
+      breaks = seq(
+        from = 0,
+        to = ceiling(max(region_scans$LOGPVALUE)),
+        length.out = ceiling(height_mm / 7.5)
+      ),
+      labels = seq(
+        from = 0,
+        to = ceiling(max(region_scans$LOGPVALUE)),
+        length.out = ceiling(height_mm / 7.5)
+      ) |> round(digits = 0),
+      limits = c(
+        constant_y_min * region_yratio,
+        ceiling(max(region_scans$LOGPVALUE))
+      )
+    ) +
     axislabels_common +
     scales_common +
     theme_common +
     theme(
-      axis.title.x = element_text(colour = "black", size = 4, hjust = 0.48)
+      axis.title.x = element_text(
+        colour = "black",
+        face = "bold",
+        size = textsize,
+        hjust = 0.48
+      )
     )
 
   candplot_outname <- paste(
