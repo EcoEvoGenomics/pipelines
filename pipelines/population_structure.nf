@@ -1,7 +1,7 @@
 include { WRITE_POPULATION_CENSUS_LIST } from "../modules/system.nf"
 include { VCFTOOLS_CALCULATE_PAIRWISE_FST } from "../modules/vcftools.nf"
 include { GET_WINPCA; WINPCA_CHROM; WINPCA_GENOMEPLOT } from "../modules/winpca.nf"
-include { PLINK_INIT_BEDFILES; PLINK_EXCLUDE_CHROMS; PLINK_LD_PRUNE; PLINK_PCA; PLINK_MISSINGNESS; PLINK_TO_VCF } from "../modules/plink.nf"
+include { PLINK_INIT_BEDFILES; PLINK_EXCLUDE_CHROMS; PLINK_LD_PRUNE; PLINK_PCA; PLINK_MISSINGNESS; PLINK_TO_VCF; PLINK_TO_VCF as AIMS_TO_VCF } from "../modules/plink.nf"
 include { PLINK_EXTRACT_SITES as PLINK_EXTRACT_PRUNED; PLINK_EXTRACT_SITES as PLINK_EXTRACT_AIMS } from "../modules/plink.nf"
 include { ADMIXTURE; ADMIXTURE_AIMS } from "../modules/admixture.nf"
 
@@ -9,10 +9,12 @@ nextflow.preview.output = true
 
 workflow {
     main:
-    vcf = file(params.ps_vcf)
-    pops = Channel.from(params.ps_fst_populations)
+    PLINK_INIT_BEDFILES(file(params.ps_vcf), params.ref_n_chroms)
+    bed = PLINK_EXCLUDE_CHROMS(PLINK_INIT_BEDFILES.out, params.ps_exclude_chroms)
+    vcf = PLINK_TO_VCF(bed)
 
     // GENOME-WIDE FST
+    pops = Channel.from(params.ps_fst_populations)
     pop_lists = WRITE_POPULATION_CENSUS_LIST(pops, params.metadata)
 
     // Pairwise channel self-comparison without item self-comparison by David Mas-Ponte
@@ -43,19 +45,19 @@ workflow {
     WINPCA_CHROM(wpca, vcf, params.metadata, genome_index)
     WINPCA_GENOMEPLOT(wpca, vcf, params.metadata, WINPCA_CHROM.out.data.collect(), comma_separated_chrom_list)
 
-    // LD-PRUNING AND WHOLE-GENOME PCA
-    PLINK_INIT_BEDFILES(vcf, params.ref_n_chroms)
-    PLINK_EXCLUDE_CHROMS(PLINK_INIT_BEDFILES.out, params.ps_exclude_chroms)
-    PLINK_LD_PRUNE(PLINK_EXCLUDE_CHROMS.out, params.ps_prune_window_kb, params.ps_prune_step_snps, params.ps_prune_threshold)
-    plinkpruned = PLINK_EXTRACT_PRUNED(PLINK_EXCLUDE_CHROMS.out, PLINK_LD_PRUNE.out.prune_in)
-    PLINK_PCA(plinkpruned)
-
-    // PERFORM ADMIXTURE ON LD-PRUNED PLINK FILES, FIND AIMs
+    // LD-PRUNING
+    PLINK_LD_PRUNE(bed.out, params.ps_prune_window_kb, params.ps_prune_step_snps, params.ps_prune_threshold)
+    plinkpruned = PLINK_EXTRACT_PRUNED(bed.out, PLINK_LD_PRUNE.out.prune_in)
+    
+    // WHOLE-GENOME PCA, ADMIXTURE, AIMS
     k_values = Channel.of(params.ps_admixture_kmin..params.ps_admixture_kmax)
+    
     ADMIXTURE(plinkpruned, k_values)
     ADMIXTURE_AIMS(ADMIXTURE.out.pfile, PLINK_LD_PRUNE.out.prune_in, params.ps_aim_variance_threshold)
     plinkaims = PLINK_EXTRACT_AIMS(plinkpruned, ADMIXTURE_AIMS.out.flatten())
-    PLINK_TO_VCF(plinkaims)
+    AIMS_TO_VCF(plinkaims)
+
+    PLINK_PCA(plinkpruned)
 
     // REPORT MISSINGNESS OF LD-PRUNED DATA
     PLINK_MISSINGNESS(plinkpruned)
@@ -68,7 +70,7 @@ workflow {
     winpca_genomeplot = WINPCA_GENOMEPLOT.out
     pca = PLINK_PCA.out
     admixture = ADMIXTURE.out.concat()
-    aims = PLINK_TO_VCF.out
+    aims = AIMS_TO_VCF.out
     missingness = PLINK_MISSINGNESS.out
 }
 
