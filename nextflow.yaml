@@ -1,11 +1,11 @@
 ################# Shared ##################
 metadata: 
-ref_genome: /cluster/projects/nn10082k/ref/house_sparrow_genome_assembly-18-11-14_masked.fa
+ref_genome: 
 ref_genome_index: 
 ref_ploidy: 
-ref_gff: /cluster/projects/nn10082k/ref/house_sparrow.gff
-ref_n_chroms: 30
 ref_scaffold_name: scaffold
+ref_gff: 
+ref_scaffold_name: 
 ref_chr_renames_tsv: 
 
 ########## vd: VCF Diagnostics ############
@@ -15,18 +15,18 @@ vd_n_sampled_sites: 100000
 
 ######### ps: Population Structure ########
 ps_vcf: 
-ps_exclude_chroms: mtDNA
+ps_exclude_chroms: [ ]
 ps_prune_window_kb: 50
 ps_prune_step_snps: 10
 ps_prune_threshold: 0.1
 ps_admixture_kmin: 1
-ps_admixture_kmax: 6
+ps_admixture_kmax: 3
 ps_aim_variance_threshold: 0.05
-ps_fst_populations: 
+ps_fst_populations: [ ]
 
 ######### ch: Consensus Haplotree #########
 ch_cramdir: 
-ch_genome_region: mtDNA
+ch_genome_region: 
 ch_filt_indelgap: 5
 ch_filt_inclusions: 'QUAL>20 & FMT/DP>5 & FMT/DP<75'
 ch_mafft_iterations: 1000
@@ -43,7 +43,7 @@ pw_compare_species: true
 ######### hs: Haplotype Selection #########
 hs_vcfdir: 
 hs_is_polarised: false
-hs_populations: 
+hs_populations: [ ]
 hs_ihs_freqbin: 1
 hs_cand_pval: 0.05
 hs_cand_window: 1E5
