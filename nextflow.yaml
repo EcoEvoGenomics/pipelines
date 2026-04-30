@@ -3,7 +3,6 @@ metadata:
 ref_genome: 
 ref_genome_index: 
 ref_ploidy: 
-ref_scaffold_name: scaffold
 ref_gff: 
 ref_scaffold_name: 
 ref_chr_renames_tsv: 

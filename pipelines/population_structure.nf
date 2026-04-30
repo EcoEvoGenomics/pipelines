@@ -9,8 +9,25 @@ nextflow.preview.output = true
 
 workflow {
     main:
-    PLINK_INIT_BEDFILES(file(params.ps_vcf), params.ref_n_chroms)
-    bed = PLINK_EXCLUDE_CHROMS(PLINK_INIT_BEDFILES.out, params.ps_exclude_chroms)
+    // WRITE STRING FOR CHROMS TO EXCLUDE WITH PLINK
+    comma_separated_chrom_exclude_list = channel.from(params.ps_exclude_chroms) \
+    | collectFile(sort:true) { chrom_name -> chrom_name + "," } \
+    | splitText \
+    | map { list -> list.toString().substring(0, list.toString().length() - 2) } // Remove trailing comma
+    
+    // PARSE GENOME INDEX WITHOUT EXCLUDED CHROMS AND SCAFFOLDS
+    genome_index = Channel.fromPath(params.ref_genome_index) \
+    | splitCsv( sep:"\t") \
+    | map { cols -> ref_index: [cols[0], cols[1]] } \
+    | filter { index_entry -> ! index_entry[0].toString().contains(params.ref_scaffold_name) } \
+    | filter { index_entry -> index_entry[0] !in params.ps_exclude_chroms }
+
+    // DETERMINE NUMBER OF CHROMS FOR PLINK
+    n_chroms = genome_index.count()
+
+    // GET FILES
+    PLINK_INIT_BEDFILES(file(params.ps_vcf), n_chroms)
+    bed = PLINK_EXCLUDE_CHROMS(PLINK_INIT_BEDFILES.out, comma_separated_chrom_exclude_list)
     vcf = PLINK_TO_VCF(bed)
 
     // GENOME-WIDE FST
@@ -31,23 +48,18 @@ workflow {
     // CHROMOSOMAL AND GENOME-WIDE WINDOWED PCA
     wpca = GET_WINPCA()
 
-    genome_index = Channel.fromPath(params.ref_genome_index) \
-    | splitCsv( sep:"\t") \
-    | map { cols -> ref_index: [cols[0], cols[1]] } \
-    | filter { index_entry -> ! index_entry[0].toString().contains(params.ref_scaffold_name) }
-
     comma_separated_chrom_list = genome_index \
     | map { index_entry -> chrom_name: index_entry[0] } \
     | collectFile(sort:true) { chrom_name -> chrom_name + "," } \
     | splitText \
     | map { list -> list.toString().substring(0, list.toString().length() - 2) } // Remove trailing comma
 
-    WINPCA_CHROM(wpca, vcf, params.metadata, genome_index)
+    WINPCA_CHROM(wpca, params.metadata, vcf.combine(genome_index))
     WINPCA_GENOMEPLOT(wpca, vcf, params.metadata, WINPCA_CHROM.out.data.collect(), comma_separated_chrom_list)
 
     // LD-PRUNING
-    PLINK_LD_PRUNE(bed.out, params.ps_prune_window_kb, params.ps_prune_step_snps, params.ps_prune_threshold)
-    plinkpruned = PLINK_EXTRACT_PRUNED(bed.out, PLINK_LD_PRUNE.out.prune_in)
+    PLINK_LD_PRUNE(bed, params.ps_prune_window_kb, params.ps_prune_step_snps, params.ps_prune_threshold)
+    plinkpruned = PLINK_EXTRACT_PRUNED(bed, PLINK_LD_PRUNE.out.prune_in)
     
     // WHOLE-GENOME PCA, ADMIXTURE, AIMS
     k_values = Channel.of(params.ps_admixture_kmin..params.ps_admixture_kmax)

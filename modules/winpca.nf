@@ -24,9 +24,8 @@ process WINPCA_CHROM {
 
     input:
     path(winpca)
-    path(vcf)
     path(metadata_csv)
-    tuple val(chrom), val(chrom_length)
+    tuple path(vcf), val(chrom), val(chrom_length)
 
     output:
     path("${vcf.simpleName}_${chrom}*"), emit: data
