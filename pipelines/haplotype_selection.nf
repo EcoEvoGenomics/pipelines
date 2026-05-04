@@ -64,7 +64,7 @@ workflow {
         xpehh_resultfile_list,
         xpehh_candfile_list,
         params.ref_gff,
-        params.ref_chrom_renames_tsv,
+        params.ref_chr_renames_tsv,
         params.hs_cand_pval,
         params.hs_plot_main_width_mm,
         params.hs_plot_cand_width_mm,
