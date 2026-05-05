@@ -53,8 +53,7 @@ process VCFTOOLS_CALCULATE_PAIRWISE_FST {
     label "VCFTOOLS"
 
     input:
-    path(vcf)
-    tuple path(pop_a_list), path(pop_b_list)
+    tuple path(vcf), path(pop_a_list), path(pop_b_list)
 
     output:
     path("${pop_a_list.simpleName}_${pop_b_list.simpleName}.weir.fst"), emit: full

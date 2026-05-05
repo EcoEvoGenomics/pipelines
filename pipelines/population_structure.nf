@@ -43,7 +43,7 @@ workflow {
     | map { scan -> scan.sort() } \
     | unique
 
-    VCFTOOLS_CALCULATE_PAIRWISE_FST(vcf, pairwise_pop_lists)
+    VCFTOOLS_CALCULATE_PAIRWISE_FST(vcf.combine(pairwise_pop_lists))
 
     // CHROMOSOMAL AND GENOME-WIDE WINDOWED PCA
     wpca = GET_WINPCA()
