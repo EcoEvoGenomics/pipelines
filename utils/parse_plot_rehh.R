@@ -1,3 +1,5 @@
+# All hope abandon, ye who enter here ...
+
 suppressMessages(library(tidyverse))
 suppressMessages(library(forcats))
 suppressMessages(library(gtools))
