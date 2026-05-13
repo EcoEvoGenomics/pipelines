@@ -127,7 +127,9 @@ cand_padding <- 1e5
 scan_names <- unique(parsed_scans$SCAN)
 scan_labels <- tools::file_path_sans_ext((basename(scan_files)))
 scan_labels <- tools::file_path_sans_ext(scan_labels)
+scan_labels_for_paths <- scan_labels
 scan_labels <- str_replace_all(scan_labels, "_", " - ")
+names(scan_labels_for_paths) <- scan_names
 names(scan_labels) <- scan_names
 chr_names <- levels(parsed_scans$CHR)
 chr_labels <- chr_names
@@ -143,11 +145,6 @@ facet_labels <- c(chr_labels, scan_labels)
 
 axislabels_common <- list(
   ylab(expression(bold(bolditalic("-log")[10] ~ "P")))
-)
-
-scales_common <- list(
-  scale_alpha_manual(values = c(0, 1)),
-  scale_colour_manual(values = c("black", "grey60"))
 )
 
 theme_common <- theme(
@@ -215,7 +212,7 @@ manhattan <- ggplot(parsed_scans, aes(x = POSITION, y = LOGPVALUE)) +
       xmin = START,
       xmax = END,
       ymax = y_gap,
-      ymin = y_gap + (((constant_y_min - y_gap)))
+      ymin = y_gap + (constant_y_min - y_gap)
     ),
     inherit.aes = FALSE,
     fill = "red"
@@ -235,8 +232,9 @@ manhattan <- ggplot(parsed_scans, aes(x = POSITION, y = LOGPVALUE)) +
     ) |> round(digits = 0),
     limits = c(constant_y_min, ceiling(constant_y_max))
   ) +
+  scale_alpha_manual(values = c(0, 1)) +
+  scale_colour_manual(values = c("black", "grey60")) +
   axislabels_common +
-  scales_common +
   theme_common +
   theme(
     axis.line.x = element_blank(),
@@ -263,60 +261,141 @@ print("Plotting candidate region plots and writing candidate genes to file ...")
 cand_outputdir <- tools::file_path_sans_ext(input_scans)
 dir.create(cand_outputdir)
 
-for (cand_index in seq_len(nrow(parsed_cands))) {
+# First merge overlapping candidate intervals into combined plotting windows
+merged_regions <- parsed_cands |>
+  arrange(CHR, START, END) |>
+  group_by(CHR) |>
+  group_modify(\(cands, key) {
 
-  chr <- as.character(parsed_cands$CHR[cand_index])
-  region_start <- parsed_cands$START[cand_index]
-  region_end <- parsed_cands$END[cand_index]
+    merged <- list()
+    current_start <- cands$START[1]
+    current_end   <- cands$END[1]
+
+    for (i in seq_len(nrow(cands))) {
+      start <- cands$START[i]
+      end <- cands$END[i]
+
+      if (start <= current_end) {
+        current_end <- max(current_end, end)
+      } else {
+        merged[[length(merged) + 1]] <- tibble(
+          START = current_start,
+          END = current_end
+        )
+        current_start <- start
+        current_end <- end
+      }
+    }
+
+    merged[[length(merged) + 1]] <- tibble(
+      START = current_start,
+      END = current_end
+    )
+    bind_rows(merged)
+
+  }) |>
+  ungroup() |>
+  arrange(CHR, START, END)
+
+for (region_index in seq_len(nrow(merged_regions))) {
+
+  chr <- as.character(merged_regions$CHR[region_index])
+  chr_min <- 0
+  chr_max <- max(parsed_scans$POSITION[parsed_scans$CHR == chr])
+
+  region_start <- merged_regions$START[region_index]
+  region_end <- merged_regions$END[region_index]
+  clamped_window_start <- max(chr_min, region_start - cand_padding)
+  clamped_window_end <- min(chr_max, region_end + cand_padding)
 
   chr_outputdir <- paste(cand_outputdir, "/", chr, sep = "")
   dir.create(chr_outputdir)
 
   region_scans <- parsed_scans |>
     filter(CHR == chr) |>
-    filter(POSITION > region_start - cand_padding) |>
-    filter(POSITION < region_end + cand_padding) |>
+    filter(POSITION >= clamped_window_start) |>
+    filter(POSITION <= clamped_window_end) |>
     mutate(SCAN = factor(SCAN)) |>
     droplevels()
 
   region_cands <- parsed_cands |>
     filter(CHR == chr) |>
-    filter(START > region_start - cand_padding) |>
-    filter(END < region_end + cand_padding) |>
+    filter(START >= clamped_window_start) |>
+    mutate(END = ifelse(END > chr_max, chr_max, END)) |>
+    filter(END <= clamped_window_end) |>
     mutate(SCAN = factor(SCAN, levels = levels(region_scans$SCAN))) |>
     droplevels()
 
   region_annots <- annots |>
     filter(CHR == chr) |>
-    filter(START > region_start - cand_padding) |>
-    filter(END < region_end + cand_padding)
+    filter(START >= clamped_window_start) |>
+    filter(END <= clamped_window_end)
 
-  # Output gff file with candidate genes before modifying annotations for plot
-  candgenes_outname <- paste(
-    chr_outputdir, "/",
-    chr, "_", format(region_start, scientific = FALSE),
-    "_", format(region_end, scientific = FALSE), ".gff",
-    sep = ""
-  )
-  candgenes <- filter(
-    region_annots,
-    (START >= region_start & START <= region_end) |
-      (END >= region_start & END <= region_end) |
-      (END >= region_start & START <= region_end)
-  )
-  candgenes |> write_tsv(file = candgenes_outname)
+  # Identify candidate genes and output them only if there are annotations
+  if (nrow(region_annots) != 0) {
 
-  # Reverse start and end for genes on minus strand for plotting arrows
-  for (index in seq_len(nrow(region_annots))) {
-    start <- region_annots$START[index]
-    end <- region_annots$END[index]
-    if (region_annots$STRAND[index] == "-") {
-      region_annots$END[index] <- start
-      region_annots$START[index] <- end
+    region_annots <- region_annots |>
+      crossing(SCAN = levels(region_scans$SCAN)) |>
+      mutate(SCAN = factor(SCAN, levels = levels(region_scans$SCAN))) |>
+      rowwise() |>
+      mutate(
+        IS_CANDGENE = {
+          this_scan <- SCAN
+          this_start <- START
+          this_end <- END
+          scan_cands <- region_cands |>
+            filter(as.character(SCAN) == as.character(this_scan))
+          no_scan_cands <- nrow(scan_cands) == 0
+          if (no_scan_cands) {
+            FALSE
+          } else {
+            any(
+              this_start <= scan_cands$END &
+                this_end >= scan_cands$START
+            )
+          }
+        }
+      ) |>
+      ungroup()
+
+    # Output gff file with candidate genes before modifying annotations for plot
+    for (scan in levels(region_scans$SCAN)) {
+
+      candgenes_in_scan <- region_annots |>
+        filter(SCAN == scan, IS_CANDGENE) |>
+        select(-SCAN, -IS_CANDGENE)
+
+      no_candgenes <- nrow(candgenes_in_scan) == 0
+      if (no_candgenes) {
+        next
+      }
+
+      candgenes_outname <- paste(
+        chr_outputdir, "/", chr,
+        "_", format(region_start, scientific = FALSE),
+        "_", format(region_end, scientific = FALSE),
+        "_", scan_labels_for_paths[which(names(scan_labels_for_paths) == scan)],
+        ".gff",
+        sep = ""
+      )
+
+      candgenes_in_scan |> write_tsv(file = candgenes_outname)
     }
+
+    # Reverse start and end for genes on minus strand for plotting arrows
+    for (index in seq_len(nrow(region_annots))) {
+      start <- region_annots$START[index]
+      end <- region_annots$END[index]
+      if (region_annots$STRAND[index] == "-") {
+        region_annots$END[index] <- start
+        region_annots$START[index] <- end
+      }
+    }
+
   }
 
   region_ymax <- ceiling(max(region_scans$LOGPVALUE))
+  region_ymax_padded <- region_ymax * 1.15
   region_yratio <- region_ymax / constant_y_max
 
   candhattan <- ggplot(region_scans, aes(x = POSITION, y = LOGPVALUE)) +
@@ -331,70 +410,52 @@ for (cand_index in seq_len(nrow(parsed_cands))) {
       aes(
         xmin = START,
         xmax = END,
-        ymin = 0,
-        ymax = max(region_scans$LOGPVALUE)
+        ymax = region_ymax,
+        ymin = 0
       ),
-      inherit.aes = FALSE, # Boxes on wrong facet panels: is this it?...
+      inherit.aes = FALSE,
       fill = "red", colour = "red",
       linewidth = 0.1, lty = 2,
-      alpha = 0.1
+      alpha = 0.05
     ) +
     geom_point(colour = "black", size = 0.5, stroke = 0, show.legend = FALSE) +
     geom_point(
       aes(alpha = LOGPVALUE > SCAN_BONFERRONI_THRESHOLD),
       colour = "red", size = 0.5, stroke = 0, show.legend = FALSE
     ) +
-    geom_segment(
-      data = region_annots,
-      aes(
-        x = START,
-        xend = END,
-        y = (constant_y_min - ((constant_y_min - y_gap)) / 2) * region_yratio,
-        yend = (constant_y_min - ((constant_y_min - y_gap)) / 2) * region_yratio
-      ),
-      arrow = arrow(
-        angle = 30,
-        length = unit(1, "mm"),
-        type = "closed"
-      ),
-      position = position_jitter(
-        width = 0,
-        height = abs((constant_y_min - y_gap) / 3) * region_yratio
-      ),
-      colour = "blue",
-      linewidth = 0.4,
-      lineend = "square",
-      inherit.aes = FALSE
-    ) +
     xlab(chr) +
+    scale_alpha_manual(values = c(0, 1)) +
     scale_x_continuous(
       breaks = seq(
-        from = region_start - cand_padding,
-        to = region_end + cand_padding,
+        from = clamped_window_start,
+        to = clamped_window_end,
         length.out = max(2, ceiling(width_mm / 40))
       ),
-      expand = expansion(mult = c(0.01, 0.05)),
+      limits = c(
+        clamped_window_start,
+        clamped_window_end
+      ),
+      expand = expansion(mult = c(0, 0.05)),
       guide = guide_axis(cap = "both")
     ) +
     scale_y_continuous(
       guide = guide_axis(cap = TRUE),
       breaks = seq(
         from = 0,
-        to = ceiling(max(region_scans$LOGPVALUE)),
+        to = region_ymax_padded,
         length.out = ceiling(height_mm / 7.5)
       ),
       labels = seq(
         from = 0,
-        to = ceiling(max(region_scans$LOGPVALUE)),
+        to = region_ymax_padded,
         length.out = ceiling(height_mm / 7.5)
       ) |> round(digits = 0),
       limits = c(
         constant_y_min * region_yratio,
-        ceiling(max(region_scans$LOGPVALUE))
+        region_ymax_padded
       )
     ) +
     axislabels_common +
-    scales_common +
     theme_common +
     theme(
       axis.title.x = element_text(
@@ -404,6 +465,35 @@ for (cand_index in seq_len(nrow(parsed_cands))) {
         hjust = 0.48
       )
     )
+
+  # Add annotation arrows if they exist in the window
+  if (nrow(region_annots) != 0) {
+    candhattan <- candhattan +
+      geom_segment(
+        data = region_annots,
+        aes(
+          x = START,
+          xend = END,
+          y = (constant_y_min - (constant_y_min - y_gap) / 2) * region_yratio,
+          yend = (constant_y_min - (constant_y_min - y_gap) / 2) * region_yratio,
+          colour = IS_CANDGENE
+        ),
+        arrow = arrow(
+          angle = 30,
+          length = unit(0.75, "mm"),
+          type = "closed"
+        ),
+        position = position_jitter(
+          width = 0,
+          height = abs((constant_y_min - y_gap) / 3) * region_yratio
+        ),
+        linewidth = 0.25,
+        lineend = "square",
+        show.legend = FALSE,
+        inherit.aes = FALSE
+      ) +
+      scale_colour_manual(values = c("#bbbbff", "blue"))
+  }
 
   candplot_outname <- paste(
     chr_outputdir, "/",
@@ -422,7 +512,7 @@ for (cand_index in seq_len(nrow(parsed_cands))) {
   print(
     paste(
       "Candidate region plot ",
-      cand_index, "/", nrow(parsed_cands),
+      region_index, "/", nrow(merged_regions),
       " saved to ", candplot_outname,
       " and candidate genes extracted from your .gff",
       sep = ""
