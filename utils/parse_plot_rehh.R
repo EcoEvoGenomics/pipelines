@@ -25,8 +25,11 @@ width_mm <- as.integer(args[6])
 cand_mm <- as.integer(args[7])
 height_mm <- as.integer(args[8])
 
-n_scans <- length(readLines(input_scans))
-n_cands <- length(readLines(input_cands))
+scan_files <- readLines(input_scans)
+cand_files <- readLines(input_cands)
+
+n_scans <- length(scan_files)
+n_cands <- length(cand_files)
 stopifnot(n_cands == n_scans)
 
 # -------- Parse chromosomes rename tsv ----------------------------------------
@@ -36,13 +39,16 @@ names(renamed_chrs) <- read.table(chr_conversion_table)$V2
 # -------- Parse input xp-EHH and IHS .CSV files -------------------------------
 print("Parsing input files ...")
 
-parsed_scans <- data.frame()
-parsed_cands <- data.frame()
+scan_list <- vector("list", length(scan_files))
+cand_list <- vector("list", length(cand_files))
 
-for (file_path in readLines(input_scans)) {
+for (scan_index in seq_along(scan_files)) {
+
+  file_path <- scan_files[scan_index]
 
   file_is_ihs <- "IHS" %in% colnames(read.csv(file_path, nrows = 1))
   file_nrows <- as.integer(system(paste("wc -l <", file_path), intern = TRUE))
+  scan_nsnps <- file_nrows - 1
 
   tmp <- paste(tempfile(), ".csv.tmp", sep = "")
   awk_fields <- ifelse(file_is_ihs, "'{print $1,$2,$4}'", "'{print $1,$2,$8}'")
@@ -52,32 +58,33 @@ for (file_path in readLines(input_scans)) {
     as_tibble() |>
     drop_na(LOGPVALUE) |>
     mutate(SCAN = file_path) |>
-    mutate(SCAN_BONFERRONI_THRESHOLD = -log10(base_pval / file_nrows))
+    mutate(SCAN_BONFERRONI_THRESHOLD = -log10(base_pval / scan_nsnps))
 
-  parsed_scans <- rbind(parsed_scans, parsed_scanfile) # Memory inefficient
+  scan_list[[scan_index]] <- parsed_scanfile
   rm(parsed_scanfile)
   invisible(gc())
 
 }
 
-for (cand_index in seq_len(n_cands)) {
+for (cand_index in seq_along(cand_files)) {
 
-  file_path <- readLines(input_cands)[cand_index]
-  scan_number <- rep(seq_len(n_scans), n_cands / n_scans)[cand_index]
-  cand_number <- ceiling(cand_index / n_scans)
-  matched_scan_path <- readLines(input_scans)[scan_number]
+  file_path <- cand_files[cand_index]
+  scan_index <- cand_index # Must be ordered identically in input
+  matched_scan_path <- scan_files[scan_index]
 
   parsed_candfile <- read.csv(file_path, header = TRUE) |>
     as_tibble() |>
     select(CHR, START, END, MAX_MRK) |>
-    mutate(SCAN = matched_scan_path) |>
-    mutate(CAND = cand_number)
+    mutate(SCAN = matched_scan_path)
 
-  parsed_cands <- rbind(parsed_cands, parsed_candfile) # Memory inefficient
+  cand_list[[cand_index]] <- parsed_candfile
   rm(parsed_candfile)
   invisible(gc())
 
 }
+
+parsed_scans <- bind_rows(scan_list)
+parsed_cands <- bind_rows(cand_list)
 
 format_scans_cands <- function(scans_or_cands, renamed_chrs) {
   scans_or_cands <- scans_or_cands |>
@@ -118,7 +125,7 @@ y_gap <- constant_y_min / 3
 cand_padding <- 1e5
 
 scan_names <- unique(parsed_scans$SCAN)
-scan_labels <- tools::file_path_sans_ext((basename(readLines(input_scans))))
+scan_labels <- tools::file_path_sans_ext((basename(scan_files)))
 scan_labels <- tools::file_path_sans_ext(scan_labels)
 scan_labels <- str_replace_all(scan_labels, "_", " - ")
 names(scan_labels) <- scan_names
@@ -205,11 +212,10 @@ manhattan <- ggplot(parsed_scans, aes(x = POSITION, y = LOGPVALUE)) +
   geom_rect(
     data = parsed_cands,
     aes(
-      group = CAND,
       xmin = START,
       xmax = END,
-      ymax = y_gap + (((constant_y_min - y_gap) / CAND) * (CAND - 1)),
-      ymin = y_gap + (((constant_y_min - y_gap) / CAND) * CAND)
+      ymax = y_gap,
+      ymin = y_gap + (((constant_y_min - y_gap)))
     ),
     inherit.aes = FALSE,
     fill = "red"
@@ -260,7 +266,6 @@ dir.create(cand_outputdir)
 for (cand_index in seq_len(nrow(parsed_cands))) {
 
   chr <- as.character(parsed_cands$CHR[cand_index])
-  focal_scan <- parsed_cands$SCAN[cand_index]
   region_start <- parsed_cands$START[cand_index]
   region_end <- parsed_cands$END[cand_index]
 
@@ -270,12 +275,16 @@ for (cand_index in seq_len(nrow(parsed_cands))) {
   region_scans <- parsed_scans |>
     filter(CHR == chr) |>
     filter(POSITION > region_start - cand_padding) |>
-    filter(POSITION < region_end + cand_padding)
+    filter(POSITION < region_end + cand_padding) |>
+    mutate(SCAN = factor(SCAN)) |>
+    droplevels()
 
   region_cands <- parsed_cands |>
     filter(CHR == chr) |>
     filter(START > region_start - cand_padding) |>
-    filter(END < region_end + cand_padding)
+    filter(END < region_end + cand_padding) |>
+    mutate(SCAN = factor(SCAN, levels = levels(region_scans$SCAN))) |>
+    droplevels()
 
   region_annots <- annots |>
     filter(CHR == chr) |>
@@ -291,8 +300,9 @@ for (cand_index in seq_len(nrow(parsed_cands))) {
   )
   candgenes <- filter(
     region_annots,
-    (START > region_start & START < region_end) |
-      (END > region_start & END < region_end)
+    (START >= region_start & START <= region_end) |
+      (END >= region_start & END <= region_end) |
+      (END >= region_start & START <= region_end)
   )
   candgenes |> write_tsv(file = candgenes_outname)
 
@@ -324,7 +334,7 @@ for (cand_index in seq_len(nrow(parsed_cands))) {
         ymin = 0,
         ymax = max(region_scans$LOGPVALUE)
       ),
-      inherit.aes = FALSE,
+      inherit.aes = FALSE, # Boxes on wrong facet panels: is this it?...
       fill = "red", colour = "red",
       linewidth = 0.1, lty = 2,
       alpha = 0.1
