@@ -53,11 +53,11 @@ workflow {
 
     xpehh_resultfile_list = REHH_CALCULATE_XPEHH.out.csv \
     | map { xpehh -> "${xpehh.toString()}" } \
-    | collectFile(name: "xpehh.list", newLine: true)
+    | collectFile(name: "xpehh.list", sort: true, newLine: true)
 
     xpehh_candfile_list = REHH_CALCULATE_XPEHH.out.candidates \
     | map { cand -> "${cand.toString()}" } \
-    | collectFile(name: "cand.list", newLine: true)
+    | collectFile(name: "cand.list", sort: true, newLine: true)
 
     REHH_PARSE_PLOT_SCAN(
         file("${launchDir}/utils/parse_plot_rehh.R"),
